@@ -1,17 +1,13 @@
-import express from "express";
-import cors from "cors";
+import { app } from "./app.js";
+import { connectDB } from "./config/db.js";
+import { env } from "./config/env.js";
 
-const app = express();
+const startServer = async (): Promise<void> => {
+  await connectDB();
 
-app.use(cors());
-app.use(express.json());
+  app.listen(env.PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${env.PORT}`);
+  });
+};
 
-app.get("/", (req, res) => {
-  res.json({ message: "Backend ecommerce funcionando 🚀" });
-});
-
-const PORT = 3000;
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+void startServer();
