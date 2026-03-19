@@ -1,0 +1,2 @@
+// Hooks de categorías
+export {};

@@ -1,0 +1,2 @@
+// Store de carrito
+export {};

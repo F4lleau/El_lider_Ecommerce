@@ -1,0 +1,2 @@
+// Store de autenticación
+export {};

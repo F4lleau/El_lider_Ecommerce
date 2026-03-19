@@ -1,0 +1,2 @@
+// Hooks de productos
+export {};
