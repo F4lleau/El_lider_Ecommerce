@@ -1,0 +1,174 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce Pastelería API
+  version: 1.0.0
+  description: API REST modular para ecommerce de pastelería y repostería.
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /auth/register:
+    post:
+      summary: Registro de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "201": { description: Usuario registrado }
+  /auth/login:
+    post:
+      summary: Login de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200": { description: Login exitoso }
+  /users/me:
+    get:
+      summary: Perfil del usuario autenticado
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Perfil }
+  /categories:
+    get:
+      summary: Listar categorías
+      responses:
+        "200": { description: Lista de categorías }
+  /categories/{slug}/products:
+    get:
+      summary: Productos de una categoría
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Lista de productos }
+  /products:
+    get:
+      summary: Listar productos
+      responses:
+        "200": { description: Lista de productos }
+  /products/{id}:
+    get:
+      summary: Detalle de producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Producto }
+  /cart:
+    get:
+      summary: Ver carrito propio
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Carrito }
+    delete:
+      summary: Vaciar carrito
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Carrito vaciado }
+  /cart/items:
+    post:
+      summary: Agregar producto al carrito
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId: { type: integer }
+                quantity: { type: integer }
+      responses:
+        "200": { description: Producto agregado }
+  /cart/items/{itemId}:
+    patch:
+      summary: Modificar cantidad de un item
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quantity: { type: integer }
+      responses:
+        "200": { description: Item actualizado }
+    delete:
+      summary: Eliminar item del carrito
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Item eliminado }
+  /orders:
+    get:
+      summary: Listar órdenes propias
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Lista de órdenes }
+  /orders/{id}:
+    get:
+      summary: Detalle de orden propia
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Orden }
+  /orders/checkout:
+    post:
+      summary: Checkout y crear orden
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address: { type: object }
+                paymentMethod: { type: string }
+                notes: { type: string }
+      responses:
+        "201": { description: Orden creada }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

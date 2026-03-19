@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { site_contentController } from "./site-content.controller.js";
+import { siteContentController } from "./site-content.controller.js";
 
-const site_contentRouter = Router();
+const siteContentRouter = Router();
 
-site_contentRouter.get("/", site_contentController.list);
+siteContentRouter.get("/:key", siteContentController.getByKey);
 
-export { site_contentRouter };
+export { siteContentRouter };
