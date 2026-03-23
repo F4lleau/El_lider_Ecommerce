@@ -1,21 +1,16 @@
-import ProductCard from "@/components/products/ProductCard";
-import { products } from "@/data/products";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
-const Ofertas = () => {
-  const offers = products.filter((p) => p.discount);
-
+const NotFoundPage = () => {
   return (
-    <div className="container py-8 animate-fade-in">
-      <h1 className="font-heading text-3xl font-bold mb-2">🔥 Ofertas Especiales</h1>
-      <p className="text-muted-foreground mb-8">Aprovechá los mejores descuentos en productos seleccionados.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {offers.map((p) => (
-          <ProductCard key={p.id} {...p} />
-        ))}
-      </div>
+    <div className="container py-20 text-center space-y-4">
+      <h1 className="text-5xl font-bold">404</h1>
+      <p className="text-muted-foreground">La página que buscás no existe.</p>
+      <Button asChild>
+        <Link to="/">Volver al inicio</Link>
+      </Button>
     </div>
   );
 };
 
-export default Ofertas;
-
+export default NotFoundPage;
