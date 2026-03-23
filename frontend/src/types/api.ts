@@ -1,2 +1,11 @@
-// Tipos globales de API
-export type {};
+export type ApiResponse<T> = {
+  ok: boolean;
+  data: T;
+  message?: string;
+};
+
+export type ApiErrorResponse = {
+  ok: false;
+  message: string;
+  details?: unknown;
+};
