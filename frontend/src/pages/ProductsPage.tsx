@@ -1,12 +1,16 @@
 import ProductCard from "@/components/products/ProductCard";
-import { products } from "@/data/products";
+import { useEffect, useState } from "react";
+import { api } from "@/services/api-client";
 
 const ProductCategories = () => {
+  const [products, setProducts] = useState([]);
+  useEffect(() => {
+    api.get("/products").then((res) => setProducts(res.data));
+  }, []);
   const grouped = products.reduce((acc, p) => {
     (acc[p.category] = acc[p.category] || []).push(p);
     return acc;
-  }, {} as Record<string, typeof products>);
-
+  }, {});
   return (
     <div className="container py-8 animate-fade-in">
       <h1 className="font-heading text-3xl font-bold mb-8">Categorías de Productos</h1>

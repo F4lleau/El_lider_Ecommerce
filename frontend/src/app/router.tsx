@@ -1,20 +1,49 @@
 import { createBrowserRouter } from "react-router-dom";
-import HomePage from "../pages/HomePage";
+import MainLayout from "@/components/layout/MainLayout";
+import HomePage from "@/pages/Index";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
-import ProductsPage from "../pages/ProductsPage";
+import ProductsCategories from "../pages/ProductsPage";
 import OffersPage from "../pages/OffersPage";
-import AboutPage from "../pages/AboutPage";
+import AboutPage from "@/pages/AboutPage";
 import CartPage from "../pages/CartPage";
-import NotFoundPage from "../pages/NotFoundPage";
-
+import BestSellersPage from "../pages/BestSellersPage";
+import NotFoundPage from "@/pages/NotFoundPage";
 export const router = createBrowserRouter([
-	{ path: "/", element: <HomePage /> },
-	{ path: "/productos", element: <ProductsPage /> },
-	{ path: "/ofertas", element: <OffersPage /> },
-	{ path: "/nosotros", element: <AboutPage /> },
-	{ path: "/login", element: <LoginPage /> },
-	{ path: "/registro", element: <RegisterPage /> },
-	{ path: "/carrito", element: <CartPage /> },
-	{ path: "*", element: <NotFoundPage /> },
+	{
+		path: "/",
+		element: <MainLayout><HomePage /></MainLayout>,
+	},
+	{
+		path: "/productos",
+		element: <MainLayout><ProductsCategories /></MainLayout>,
+	},
+	{
+		path: "/ofertas",
+		element: <MainLayout><OffersPage /></MainLayout>,
+	},
+	{
+		path: "/nosotros",
+		element: <MainLayout><AboutPage /></MainLayout>,
+	},
+	{
+		path: "/login",
+		element: <MainLayout><LoginPage /></MainLayout>,
+	},
+	{
+		path: "/registro",
+		element: <MainLayout><RegisterPage /></MainLayout>,
+	},
+	{
+		path: "/carrito",
+		element: <MainLayout><CartPage /></MainLayout>,
+	},
+	{
+		path: "/mas-vendidos",
+		element: <MainLayout><BestSellersPage /></MainLayout>,
+	},
+	{
+		path: "*",
+		element: <NotFoundPage />,
+	},
 ]);

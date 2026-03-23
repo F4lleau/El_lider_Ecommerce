@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { productsService } from "@/services/products.service";
 import type { Product } from "@/types/product";
 
-const BestSellersPage = () => {
+const MasVendidos = () => {
   const [products, setProducts] = useState<Product[]>([]);
   useEffect(() => {
     productsService.getAll().then((res) => setProducts(res.data));
@@ -26,4 +26,4 @@ const BestSellersPage = () => {
   );
 };
 
-export default BestSellersPage;
+export default MasVendidos;
