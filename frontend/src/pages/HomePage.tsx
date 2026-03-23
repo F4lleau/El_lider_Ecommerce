@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryCard from "@/components/home/CategoryCard";
-import { products } from "@/data/products";
 import heroBanner from "@/assets/hero-banner.jpg";
+import { useProducts } from "@/features/products/hooks";
 
 const categories = [
   { name: "Repostería", icon: Cake, color: "bg-lilac text-lilac-foreground", to: "/productos/categorias" },
@@ -14,13 +14,12 @@ const categories = [
   { name: "Gastronomía", icon: Utensils, color: "bg-accent text-accent-foreground", to: "/productos/categorias" },
 ];
 
-const Index = () => {
-  const offers = products.filter((p) => p.discount);
-  const bestSellers = products.filter((p) => p.bestSeller);
+const HomePage = () => {
+  const { data: offers } = useProducts({ mode: "offers" });
+  const { data: featured } = useProducts({ mode: "featured" });
 
   return (
     <div className="animate-fade-in">
-      {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroBanner} alt="" className="w-full h-full object-cover" />
@@ -48,7 +47,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categorías */}
       <section className="container py-12">
         <h2 className="font-heading text-2xl font-bold mb-6">Categorías</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -58,7 +56,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Ofertas */}
       <section className="bg-muted/40 py-12">
         <div className="container">
           <div className="flex items-center justify-between mb-6">
@@ -68,14 +65,21 @@ const Index = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {offers.map((p) => (
-              <ProductCard key={p.id} {...p} />
+            {offers.slice(0, 4).map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                compareAtPrice={product.compareAtPrice}
+                image={product.images[0]?.url ?? "/placeholder.svg"}
+                category={product.category.name}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Más Vendidos */}
       <section className="container py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-heading text-2xl font-bold">⭐ Más Vendidos</h2>
@@ -84,8 +88,16 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {bestSellers.map((p) => (
-            <ProductCard key={p.id} {...p} />
+          {featured.slice(0, 6).map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              compareAtPrice={product.compareAtPrice}
+              image={product.images[0]?.url ?? "/placeholder.svg"}
+              category={product.category.name}
+            />
           ))}
         </div>
       </section>
@@ -93,4 +105,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default HomePage;
