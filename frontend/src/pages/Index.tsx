@@ -5,6 +5,19 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryCard from "@/components/home/CategoryCard";
 import heroBanner from "@/assets/hero-banner.jpg";
+import { useProducts } from "@/features/products/hooks";
+
+const categories = [
+  { name: "Repostería", icon: Cake, color: "bg-lilac text-lilac-foreground", to: "/productos/categorias" },
+  { name: "Descartables", icon: Package, color: "bg-sky text-sky-foreground", to: "/productos/categorias" },
+  { name: "Cotillón", icon: PartyPopper, color: "bg-peach text-peach-foreground", to: "/productos/categorias" },
+  { name: "Envases", icon: Box, color: "bg-mint text-mint-foreground", to: "/productos/categorias" },
+  { name: "Gastronomía", icon: Utensils, color: "bg-accent text-accent-foreground", to: "/productos/categorias" },
+];
+
+const HomePage = () => {
+  const { data: offers } = useProducts({ mode: "offers" });
+  const { data: featured } = useProducts({ mode: "featured" });
 import { productsService } from "@/services/products.service";
 import { categoriesService } from "@/services/categories.service";
 import type { Product } from "@/types/product";
@@ -27,7 +40,6 @@ const Index = () => {
 
   return (
     <div className="animate-fade-in">
-      {/* 4. Hero principal */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroBanner} alt="" className="w-full h-full object-cover" />
@@ -55,7 +67,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* 5. Categorías dinámicas */}
       <section className="container py-12">
         <h2 className="font-heading text-2xl font-bold mb-6">Categorías</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -71,7 +82,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* 6. Ofertas */}
       <section className="bg-muted/40 py-12">
         <div className="container">
           <div className="flex items-center justify-between mb-6">
@@ -81,14 +91,21 @@ const Index = () => {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {offers.map((p) => (
-              <ProductCard key={p.id} {...p} />
+            {offers.slice(0, 4).map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                compareAtPrice={product.compareAtPrice}
+                image={product.images[0]?.url ?? "/placeholder.svg"}
+                category={product.category.name}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      {/* 7. Más vendidos */}
       <section className="container py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-heading text-2xl font-bold">⭐ Más Vendidos</h2>
@@ -97,8 +114,16 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {bestSellers.map((p) => (
-            <ProductCard key={p.id} {...p} />
+          {featured.slice(0, 6).map((product) => (
+            <ProductCard
+              key={product.id}
+              id={product.id}
+              name={product.name}
+              price={product.price}
+              compareAtPrice={product.compareAtPrice}
+              image={product.images[0]?.url ?? "/placeholder.svg"}
+              category={product.category.name}
+            />
           ))}
         </div>
       </section>
@@ -106,5 +131,4 @@ const Index = () => {
   );
 };
 
-
-export default Index;
+export default HomePage;

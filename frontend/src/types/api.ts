@@ -7,5 +7,5 @@ export type ApiResponse<T> = {
 export type ApiErrorResponse = {
   ok: false;
   message: string;
-  errors?: Record<string, string[]>;
+  details?: unknown;
 };
