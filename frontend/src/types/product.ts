@@ -1,27 +1,32 @@
-import type { Category } from "./category";
-
-export interface ProductImage {
-  id: string;
+export type ProductImage = {
+  id: number;
+  productId: number;
   url: string;
-  alt?: string | null;
+  alt: string | null;
   isPrimary: boolean;
-}
+};
 
-export interface Product {
-  id: string;
+export type ProductCategorySummary = {
+  id: number;
   name: string;
   slug: string;
-  description?: string | null;
-  price: number;
-  compareAtPrice?: number | null;
+};
+
+export type Product = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: string;
+  compareAtPrice: string | null;
   stock: number;
   isFeatured: boolean;
   isOffer: boolean;
   isNew: boolean;
   isActive: boolean;
-  categoryId: string;
-  category: Category;
+  categoryId: number;
+  category: ProductCategorySummary;
   images: ProductImage[];
   createdAt: string;
   updatedAt: string;
-}
+};
