@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingCart } from "lucide-react";
+import { Check, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/features/cart/store";
 
@@ -13,54 +13,49 @@ type ProductCardProps = {
   stock: number;
 };
 
+const money = (value: number) => value.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+
 const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }: ProductCardProps) => {
   const addItem = useCartStore((state) => state.addItem);
   const [feedback, setFeedback] = useState<string | null>(null);
   const priceValue = Number(price);
   const compareAtValue = compareAtPrice ? Number(compareAtPrice) : null;
   const hasDiscount = compareAtValue !== null && compareAtValue > priceValue;
+  const discount = hasDiscount && compareAtValue ? Math.round((1 - priceValue / compareAtValue) * 100) : 0;
 
   return (
-    <div className="group bg-card rounded-lg border overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 animate-fade-in">
-      <div className="relative aspect-square bg-muted/30 overflow-hidden">
-        <img src={image} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-        <span className="absolute top-2 right-2 bg-mint text-mint-foreground text-xs font-medium px-2 py-1 rounded-md">{category}</span>
+    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-elevated">
+      <div className="relative aspect-[4/3] overflow-hidden bg-secondary sm:aspect-square">
+        <img src={image} alt={name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          {hasDiscount ? <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-extrabold text-primary-foreground">-{discount}%</span> : null}
+          {stock < 1 ? <span className="rounded-full bg-foreground px-2.5 py-1 text-xs font-extrabold text-background">Sin stock</span> : null}
+        </div>
       </div>
-      <div className="p-4 space-y-2">
-        <h3 className="font-heading font-semibold text-sm leading-tight line-clamp-2">{name}</h3>
-        <div className="flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className="font-heading font-bold text-lg text-primary">
-              ${priceValue.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-            </span>
-            {hasDiscount && compareAtValue ? (
-              <span className="text-xs text-muted-foreground line-through">
-                ${compareAtValue.toLocaleString("es-AR", { minimumFractionDigits: 2 })}
-              </span>
-            ) : null}
-          </div>
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-primary">{category}</p>
+        <h3 className="mb-4 line-clamp-2 min-h-12 font-heading text-base font-extrabold leading-snug sm:text-lg">{name}</h3>
+        <div className="mt-auto">
+          {hasDiscount && compareAtValue ? <p className="text-sm text-muted-foreground line-through">{money(compareAtValue)}</p> : <div className="h-5" />}
+          <p className="mb-4 font-heading text-2xl font-extrabold text-foreground">{money(priceValue)}</p>
           <Button
-            size="icon"
-            variant="outline"
-            className="h-8 w-8 shrink-0"
+            className="w-full"
+            variant={stock < 1 ? "outline" : "default"}
             disabled={stock < 1}
             title={stock < 1 ? "Sin stock" : "Agregar al carrito"}
             onClick={() => {
-              void addItem(id, stock)
-                .then(() => {
-                  setFeedback("Agregado");
-                  window.setTimeout(() => setFeedback(null), 1500);
-                })
-                .catch(() => setFeedback("Sin stock"));
+              void addItem(id, stock).then(() => {
+                setFeedback("Agregado");
+                window.setTimeout(() => setFeedback(null), 1500);
+              }).catch(() => setFeedback("Sin stock"));
             }}
           >
-            <ShoppingCart className="h-3.5 w-3.5" />
+            {feedback === "Agregado" ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+            {stock < 1 ? "Sin stock" : feedback ?? "Agregar"}
           </Button>
         </div>
-        {feedback ? <p className="text-xs text-primary">{feedback}</p> : null}
       </div>
-    </div>
+    </article>
   );
 };
-
 export default ProductCard;

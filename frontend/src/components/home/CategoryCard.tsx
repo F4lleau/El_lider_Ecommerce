@@ -1,5 +1,5 @@
+import { ArrowUpRight, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { LucideIcon } from "lucide-react";
 
 interface CategoryCardProps {
   name: string;
@@ -8,23 +8,10 @@ interface CategoryCardProps {
   to: string;
 }
 
-const CategoryCard = ({ name, icon: Icon, color, to }: CategoryCardProps) => {
-  return (
-    <Link
-      to={to}
-      className={`flex flex-col items-center gap-4 px-4 py-7 rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-1 group min-h-[170px]`}
-      style={{ textDecoration: "none" }}
-    >
-      <div
-        className={`w-16 h-16 rounded-xl flex items-center justify-center mb-2 ${color} transition-transform group-hover:scale-110 shadow-sm`}
-      >
-        <Icon className="h-8 w-8 text-primary" />
-      </div>
-      <span className="font-heading font-semibold text-base text-center text-gray-800 group-hover:text-primary transition-colors">
-        {name}
-      </span>
-    </Link>
-  );
-};
-
+const CategoryCard = ({ name, icon: Icon, color, to }: CategoryCardProps) => (
+  <Link to={to} className="group flex min-h-36 flex-col justify-between rounded-3xl border bg-card p-4 shadow-card transition-all hover:-translate-y-1 hover:border-primary/20 hover:shadow-elevated sm:min-h-44 sm:p-5">
+    <div className={`grid h-12 w-12 place-items-center rounded-2xl ${color} transition-transform group-hover:scale-105 sm:h-14 sm:w-14`}><Icon className="h-6 w-6 sm:h-7 sm:w-7" /></div>
+    <div className="flex items-end justify-between gap-2"><span className="font-heading text-sm font-extrabold sm:text-base">{name}</span><ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" /></div>
+  </Link>
+);
 export default CategoryCard;
