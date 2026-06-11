@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
+import { ApiError } from "../../utils/api-error.js";
 import { authService } from "./auth.service.js";
 import { loginSchema, registerSchema } from "./auth.schema.js";
 
@@ -22,6 +23,19 @@ export const authController = {
     res.status(200).json({
       ok: true,
       message: "Login exitoso",
+      data,
+    });
+  }),
+
+  me: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new ApiError(401, "No autenticado");
+    }
+
+    const data = await authService.getMe(req.user.id);
+
+    res.status(200).json({
+      ok: true,
       data,
     });
   }),

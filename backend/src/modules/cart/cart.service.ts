@@ -2,6 +2,7 @@ import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
 
 import type { PrismaClient } from "@prisma/client";
+import type { AddCartItemInput } from "./cart.schema.js";
 type PrismaTx = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">;
 
 const cartInclude = {
@@ -49,11 +50,56 @@ const mapCartResponse = (cart: {
 
   return {
     ...cart,
+    items: cart.items.map((item) => ({
+      ...item,
+      subtotal: Number((Number(item.product.price) * item.quantity).toFixed(2)),
+    })),
     summary: {
       itemsCount,
       subtotal: Number(subtotal.toFixed(2)),
     },
   };
+};
+
+const validateProducts = async (items: AddCartItemInput[]) => {
+  const quantities = new Map<number, number>();
+  for (const item of items) {
+    quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
+  }
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: [...quantities.keys()] } },
+    include: cartInclude.items.include.product.include,
+  });
+
+  return [...quantities.entries()].map(([productId, quantity]) => {
+    const product = products.find((candidate) => candidate.id === productId);
+    if (!product || !product.isActive) {
+      throw new ApiError(404, `Producto ${productId} no encontrado o inactivo`);
+    }
+    if (quantity > product.stock) {
+      throw new ApiError(409, `Stock insuficiente para ${product.name}`);
+    }
+    return { product, productId, quantity };
+  });
+};
+
+const validateGuest = async (items: AddCartItemInput[]) => {
+  const validatedItems = await validateProducts(items);
+  return mapCartResponse({
+    id: 0,
+    userId: 0,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+    items: validatedItems.map((item, index) => ({
+      id: -(index + 1),
+      productId: item.productId,
+      quantity: item.quantity,
+      createdAt: new Date(0),
+      updatedAt: new Date(0),
+      product: item.product,
+    })),
+  });
 };
 
 const getOrCreateCart = async (userId: number, db: PrismaClient | PrismaTx = prisma) => {
@@ -89,7 +135,7 @@ const addItem = async (userId: number, productId: number, quantity: number) => {
   });
 
   if (!product || !product.isActive) {
-    throw new ApiError(404, "Producto no encontrado");
+    throw new ApiError(404, "Producto no encontrado o inactivo");
   }
 
   const cart = await getOrCreateCart(userId);
@@ -109,7 +155,7 @@ const addItem = async (userId: number, productId: number, quantity: number) => {
 
   const nextQuantity = (existingItem?.quantity ?? 0) + quantity;
   if (nextQuantity > product.stock) {
-    throw new ApiError(400, "No hay stock suficiente para ese producto");
+    throw new ApiError(409, "No hay stock suficiente para ese producto");
   }
 
   if (existingItem) {
@@ -151,11 +197,11 @@ const updateItem = async (userId: number, itemId: number, quantity: number) => {
   }
 
   if (!item.product.isActive) {
-    throw new ApiError(400, "El producto ya no esta disponible");
+    throw new ApiError(409, "El producto ya no esta disponible");
   }
 
   if (quantity > item.product.stock) {
-    throw new ApiError(400, "No hay stock suficiente para ese producto");
+    throw new ApiError(409, "No hay stock suficiente para ese producto");
   }
 
   await prisma.cartItem.update({
@@ -197,11 +243,38 @@ const clear = async (userId: number) => {
   return getByUser(userId);
 };
 
+const sync = async (userId: number, items: AddCartItemInput[]) => {
+  const cart = await getOrCreateCart(userId);
+  const existingItems = await prisma.cartItem.findMany({
+    where: { cartId: cart.id },
+    select: { productId: true, quantity: true },
+  });
+  const combined = [
+    ...existingItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    ...items,
+  ];
+  const validatedItems = await validateProducts(combined);
+
+  await prisma.$transaction(
+    validatedItems.map((item) =>
+      prisma.cartItem.upsert({
+        where: { cartId_productId: { cartId: cart.id, productId: item.productId } },
+        update: { quantity: item.quantity },
+        create: { cartId: cart.id, productId: item.productId, quantity: item.quantity },
+      }),
+    ),
+  );
+
+  return getByUser(userId);
+};
+
 export const cartService = {
   getByUser,
   addItem,
   updateItem,
   removeItem,
   clear,
+  sync,
+  validateGuest,
   getOrCreateCart,
 };

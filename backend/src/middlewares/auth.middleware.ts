@@ -2,12 +2,13 @@ import type { NextFunction, Request, Response } from "express";
 import type { UserRole } from "@prisma/client";
 import { ApiError } from "../utils/api-error.js";
 import { verifyToken } from "../utils/jwt.js";
+import { prisma } from "../lib/prisma.js";
 
-export const authMiddleware = (
+export const requireAuth = async (
   req: Request,
   _res: Response,
   next: NextFunction,
-): void => {
+): Promise<void> => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
     next(new ApiError(401, "Token de autenticacion requerido"));
@@ -16,28 +17,41 @@ export const authMiddleware = (
 
   const token = authHeader.replace("Bearer ", "").trim();
 
+  let payload;
   try {
-    const payload = verifyToken(token);
-    const userId = Number(payload.sub);
-
-    if (!Number.isInteger(userId)) {
-      next(new ApiError(401, "Token invalido"));
-      return;
-    }
-
-    req.user = {
-      id: userId,
-      role: payload.role,
-    };
-
-    next();
+    payload = verifyToken(token);
   } catch {
     next(new ApiError(401, "Token invalido o expirado"));
+    return;
   }
+
+  const userId = Number(payload.sub);
+  if (!Number.isInteger(userId) || typeof payload.email !== "string") {
+    next(new ApiError(401, "Token invalido"));
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, role: true },
+  });
+
+  if (!user) {
+    next(new ApiError(401, "Usuario autenticado no encontrado"));
+    return;
+  }
+
+  req.user = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+  };
+
+  next();
 };
 
-export const requireRoles =
-  (roles: UserRole[]) =>
+export const requireRole =
+  (...roles: UserRole[]) =>
   (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       next(new ApiError(401, "No autenticado"));

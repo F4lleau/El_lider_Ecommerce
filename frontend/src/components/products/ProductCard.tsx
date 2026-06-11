@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCartStore } from "@/features/cart/store";
 
 type ProductCardProps = {
   id: number;
@@ -8,10 +10,12 @@ type ProductCardProps = {
   compareAtPrice: string | null;
   image: string;
   category: string;
-  onAddToCart?: (productId: number) => void;
+  stock: number;
 };
 
-const ProductCard = ({ id, name, price, compareAtPrice, image, category, onAddToCart }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }: ProductCardProps) => {
+  const addItem = useCartStore((state) => state.addItem);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const priceValue = Number(price);
   const compareAtValue = compareAtPrice ? Number(compareAtPrice) : null;
   const hasDiscount = compareAtValue !== null && compareAtValue > priceValue;
@@ -35,10 +39,25 @@ const ProductCard = ({ id, name, price, compareAtPrice, image, category, onAddTo
               </span>
             ) : null}
           </div>
-          <Button size="icon" variant="outline" className="h-8 w-8 shrink-0" onClick={() => onAddToCart?.(id)}>
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-8 w-8 shrink-0"
+            disabled={stock < 1}
+            title={stock < 1 ? "Sin stock" : "Agregar al carrito"}
+            onClick={() => {
+              void addItem(id, stock)
+                .then(() => {
+                  setFeedback("Agregado");
+                  window.setTimeout(() => setFeedback(null), 1500);
+                })
+                .catch(() => setFeedback("Sin stock"));
+            }}
+          >
             <ShoppingCart className="h-3.5 w-3.5" />
           </Button>
         </div>
+        {feedback ? <p className="text-xs text-primary">{feedback}</p> : null}
       </div>
     </div>
   );

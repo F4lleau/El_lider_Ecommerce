@@ -1,33 +1,13 @@
 import { apiClient } from "./api-client";
-import type { ApiResponse } from "../types/api";
-import type { AddCartItemPayload, Cart, UpdateCartItemPayload } from "../types/cart";
+import type { AddCartItemPayload, Cart, CartItemsPayload, UpdateCartItemPayload } from "../types/cart";
 
 export const cartService = {
-  async getCart() {
-    const { data } = await apiClient.get<ApiResponse<Cart>>("/cart");
-    return data;
-  },
-
-  async addItem(payload: AddCartItemPayload) {
-    const { data } = await apiClient.post<ApiResponse<Cart>>("/cart/items", payload);
-    return data;
-  },
-
-  async updateItem(itemId: string, payload: UpdateCartItemPayload) {
-    const { data } = await apiClient.patch<ApiResponse<Cart>>(
-      `/cart/items/${itemId}`,
-      payload
-    );
-    return data;
-  },
-
-  async removeItem(itemId: string) {
-    const { data } = await apiClient.delete<ApiResponse<Cart>>(`/cart/items/${itemId}`);
-    return data;
-  },
-
-  async clearCart() {
-    const { data } = await apiClient.delete<ApiResponse<Cart>>("/cart");
-    return data;
-  },
+  getCart: () => apiClient.get<Cart>("/cart"),
+  addItem: (payload: AddCartItemPayload) => apiClient.post<Cart>("/cart/items", payload),
+  updateItem: (itemId: number, payload: UpdateCartItemPayload) =>
+    apiClient.patch<Cart>(`/cart/items/${itemId}`, payload),
+  removeItem: (itemId: number) => apiClient.delete<Cart>(`/cart/items/${itemId}`),
+  clearCart: () => apiClient.delete<Cart>("/cart"),
+  sync: (payload: CartItemsPayload) => apiClient.post<Cart>("/cart/sync", payload),
+  validate: (payload: CartItemsPayload) => apiClient.post<Cart>("/cart/validate", payload),
 };

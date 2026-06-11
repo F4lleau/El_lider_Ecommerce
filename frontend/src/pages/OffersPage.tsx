@@ -21,6 +21,7 @@ const OffersPage = () => {
             compareAtPrice={product.compareAtPrice}
             image={product.images[0]?.url ?? "/placeholder.svg"}
             category={product.category.name}
+            stock={product.stock}
           />
         ))}
       </div>

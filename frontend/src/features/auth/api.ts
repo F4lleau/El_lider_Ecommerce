@@ -1,2 +1,1 @@
-// API de autenticación
-export {};
+export { authService as authApi } from "../../services/auth.service";

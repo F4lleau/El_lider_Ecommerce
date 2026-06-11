@@ -55,6 +55,7 @@ const register = async (payload: RegisterInput) => {
 
   const token = signToken({
     sub: user.id.toString(),
+    email: user.email,
     role: user.role,
   });
 
@@ -80,6 +81,7 @@ const login = async (payload: LoginInput) => {
 
   const token = signToken({
     sub: user.id.toString(),
+    email: user.email,
     role: user.role,
   });
 
@@ -89,7 +91,29 @@ const login = async (payload: LoginInput) => {
   };
 };
 
+const getMe = async (userId: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "Usuario no encontrado");
+  }
+
+  return sanitizeUser(user);
+};
+
 export const authService = {
   register,
   login,
+  getMe,
 };

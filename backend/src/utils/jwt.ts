@@ -5,6 +5,7 @@ import { env } from "../config/env.js";
 
 export type JwtPayload = {
   sub: string;
+  email: string;
   role: UserRole;
 };
 

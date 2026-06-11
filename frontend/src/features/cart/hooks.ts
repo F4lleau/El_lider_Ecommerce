@@ -1,2 +1,1 @@
-// Hooks de carrito
-export {};
+export { useCartStore } from "./store";

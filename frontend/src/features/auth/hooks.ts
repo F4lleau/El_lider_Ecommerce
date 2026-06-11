@@ -1,2 +1,1 @@
-// Hooks de autenticación
-export {};
+export { useAuthStore } from "./store";

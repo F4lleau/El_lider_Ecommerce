@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { productsApi } from "./api";
-import type { Product } from "./types";
+import type { Product } from "../../types/product";
 
 type UseProductsOptions = {
   mode?: "all" | "offers" | "featured" | "new";

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useCartStore } from "../features/cart/store";
 
 export default function MainLayout({
   children,
@@ -8,8 +9,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  // TODO: Reemplazar con el contador real del carrito
-  const cartCount = 0;
+  const cartCount = useCartStore((state) => state.cart.summary.itemsCount);
 
   return (
     <div className="flex h-screen bg-gray-50">

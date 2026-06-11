@@ -5,6 +5,7 @@ import { cartService } from "./cart.service.js";
 import {
   addCartItemSchema,
   cartItemParamsSchema,
+  cartItemsSchema,
   updateCartItemSchema,
 } from "./cart.schema.js";
 
@@ -18,6 +19,31 @@ export const cartController = {
 
     res.status(200).json({
       ok: true,
+      data: cart,
+    });
+  }),
+
+  validateGuest: asyncHandler(async (req: Request, res: Response) => {
+    const { items } = cartItemsSchema.parse(req.body);
+    const cart = await cartService.validateGuest(items);
+
+    res.status(200).json({
+      ok: true,
+      data: cart,
+    });
+  }),
+
+  syncMine: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new ApiError(401, "No autenticado");
+    }
+
+    const { items } = cartItemsSchema.parse(req.body);
+    const cart = await cartService.sync(req.user.id, items);
+
+    res.status(200).json({
+      ok: true,
+      message: "Carrito sincronizado",
       data: cart,
     });
   }),

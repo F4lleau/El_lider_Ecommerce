@@ -1,7 +1,7 @@
-export type UserRole = "CUSTOMER" | "ADMIN";
+export type UserRole = "USER" | "ADMIN";
 
 export interface User {
-  id: string;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;

@@ -11,6 +11,11 @@ import CartPage from "../pages/CartPage";
 import BestSellersPage from "../pages/BestSellersPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import AppLayout from "./layout";
+import { ProtectedRoute } from "../components/auth/ProtectedRoute";
+import { AdminRoute } from "../components/auth/AdminRoute";
+import AccountPage from "../pages/AccountPage";
+import AdminDashboardPage from "../pages/AdminDashboardPage";
+import AccessDeniedPage from "../pages/AccessDeniedPage";
 
 const RootLayout = () => (
   <AppLayout>
@@ -38,6 +43,18 @@ export const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
       { path: "registro", element: <RegisterPage /> },
       { path: "carrito", element: <CartPage /> },
+      { path: "acceso-denegado", element: <AccessDeniedPage /> },
+      {
+        element: <ProtectedRoute />,
+        children: [{ path: "mi-cuenta", element: <AccountPage /> }],
+      },
+      {
+        element: <AdminRoute />,
+        children: [
+          { path: "admin", element: <Navigate to="/admin/dashboard" replace /> },
+          { path: "admin/dashboard", element: <AdminDashboardPage /> },
+        ],
+      },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

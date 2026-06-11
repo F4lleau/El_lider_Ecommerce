@@ -1,5 +1,5 @@
 import { apiClient } from "@/services/api-client";
-import type { Product } from "./types";
+import type { Product } from "../../types/product";
 
 export const productsApi = {
   list: () => apiClient.get<Product[]>("/products"),
