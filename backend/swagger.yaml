@@ -76,6 +76,22 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Lista de productos }
+  /categories/{id}/products:
+    get:
+      summary: Productos activos de una categoria por id
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Categoria con productos }
+        "404": { description: Categoria no encontrada }
+  /categories/slug/{slug}/products:
+    get:
+      summary: Productos activos de una categoria por slug
+      parameters:
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Categoria con productos }
+        "404": { description: Categoria no encontrada }
   /products:
     get:
       summary: Listar productos
@@ -91,6 +107,230 @@ paths:
           schema: { type: integer }
       responses:
         "200": { description: Producto }
+        "404": { description: Producto no encontrado }
+  /products/slug/{slug}:
+    get:
+      summary: Detalle publico de producto por slug
+      parameters:
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Producto }
+        "404": { description: Producto no encontrado }
+  /products/offers:
+    get:
+      summary: Productos activos en oferta
+      responses:
+        "200": { description: Lista de productos }
+  /products/featured:
+    get:
+      summary: Productos activos destacados
+      responses:
+        "200": { description: Lista de productos }
+  /products/new:
+    get:
+      summary: Productos activos nuevos
+      responses:
+        "200": { description: Lista de productos }
+  /products/best-sellers:
+    get:
+      summary: Productos mas vendidos desde ordenes confirmadas
+      responses:
+        "200": { description: Lista ordenada por cantidad vendida }
+  /admin/products:
+    get:
+      summary: Listar todos los productos para admin
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Lista completa }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+    post:
+      summary: Crear producto
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductWrite" }
+      responses:
+        "201": { description: Producto creado }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Categoria no encontrada }
+        "409": { description: Slug duplicado }
+  /admin/products/{id}:
+    get:
+      summary: Obtener producto para admin
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Producto }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Producto no encontrado }
+    patch:
+      summary: Editar producto
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductWrite" }
+      responses:
+        "200": { description: Producto actualizado }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Producto o categoria no encontrado }
+        "409": { description: Slug duplicado }
+    delete:
+      summary: Desactivar producto
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Producto desactivado }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Producto no encontrado }
+  /admin/products/{id}/stock:
+    patch:
+      summary: Actualizar stock
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [stock], properties: { stock: { type: integer, minimum: 0 } } }
+      responses:
+        "200": { description: Stock actualizado }
+        "400": { description: Stock invalido }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Producto no encontrado }
+  /admin/products/{id}/price:
+    patch:
+      summary: Actualizar precio y oferta
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [price], properties: { price: { type: number, minimum: 0 }, compareAtPrice: { type: number, nullable: true }, isOffer: { type: boolean } } }
+      responses:
+        "200": { description: Precio actualizado }
+        "400": { description: Precio invalido }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Producto no encontrado }
+  /admin/categories:
+    get:
+      summary: Listar categorias para admin
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Lista completa }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+    post:
+      summary: Crear categoria
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryWrite" }
+      responses:
+        "201": { description: Categoria creada }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "409": { description: Slug duplicado }
+  /admin/categories/{id}:
+    get:
+      summary: Obtener categoria para admin
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Categoria }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Categoria no encontrada }
+    patch:
+      summary: Editar categoria
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Categoria actualizada }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Categoria no encontrada }
+        "409": { description: Slug duplicado }
+    delete:
+      summary: Desactivar categoria
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Categoria desactivada }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Categoria no encontrada }
+  /products/{productId}/stock-requests:
+    post:
+      summary: Solicitar aviso de stock como invitado o usuario autenticado
+      parameters:
+        - { in: path, name: productId, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GuestStockRequest" }
+      responses:
+        "201": { description: Solicitud creada }
+        "400": { description: Datos de contacto invalidos }
+        "404": { description: Producto no encontrado }
+        "409": { description: Producto con stock o solicitud duplicada }
+  /me/stock-requests:
+    get:
+      summary: Listar solicitudes propias
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Solicitudes del usuario }
+        "401": { description: Token requerido }
+  /admin/stock-requests:
+    get:
+      summary: Listar solicitudes para admin
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Todas las solicitudes }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+  /admin/stock-requests/{id}/status:
+    patch:
+      summary: Actualizar estado de solicitud
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [PENDING, CONTACTED, NOTIFIED, CANCELLED] } } }
+      responses:
+        "200": { description: Solicitud actualizada }
+        "400": { description: Estado invalido }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Solicitud no encontrada }
   /cart:
     get:
       summary: Ver carrito propio
@@ -234,6 +474,44 @@ paths:
         "201": { description: Orden creada }
 components:
   schemas:
+    ProductWrite:
+      type: object
+      required: [name, price, stock, categoryId]
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: number, minimum: 0 }
+        compareAtPrice: { type: number, nullable: true }
+        stock: { type: integer, minimum: 0 }
+        categoryId: { type: integer }
+        isFeatured: { type: boolean }
+        isOffer: { type: boolean }
+        isNew: { type: boolean }
+        isActive: { type: boolean }
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string, format: uri }
+              alt: { type: string, nullable: true }
+              isPrimary: { type: boolean }
+    CategoryWrite:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        isActive: { type: boolean }
+    GuestStockRequest:
+      type: object
+      description: Para usuarios autenticados el body puede omitirse.
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
     CartItemsRequest:
       type: object
       required: [items]

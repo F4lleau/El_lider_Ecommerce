@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Check, ShoppingBag } from "lucide-react";
+import { Bell, Check, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/features/cart/store";
+import { useAuthStore } from "@/features/auth/store";
+import { stockRequestsApi } from "@/features/stock-requests/api";
+import { StockRequestDialog } from "./StockRequestDialog";
 
 type ProductCardProps = {
   id: number;
@@ -17,7 +20,9 @@ const money = (value: number) => value.toLocaleString("es-AR", { style: "currenc
 
 const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }: ProductCardProps) => {
   const addItem = useCartStore((state) => state.addItem);
+  const user = useAuthStore((state) => state.user);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
   const priceValue = Number(price);
   const compareAtValue = compareAtPrice ? Number(compareAtPrice) : null;
   const hasDiscount = compareAtValue !== null && compareAtValue > priceValue;
@@ -41,20 +46,30 @@ const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }
           <Button
             className="w-full"
             variant={stock < 1 ? "outline" : "default"}
-            disabled={stock < 1}
-            title={stock < 1 ? "Sin stock" : "Agregar al carrito"}
+            title={stock < 1 ? "Avisarme cuando haya stock" : "Agregar al carrito"}
             onClick={() => {
+              if (stock < 1) {
+                if (!user) {
+                  setRequestOpen(true);
+                  return;
+                }
+                void stockRequestsApi.create(id).then(() => {
+                  setFeedback("Solicitud enviada");
+                }).catch((error: unknown) => setFeedback(error instanceof Error ? error.message : "No se pudo enviar"));
+                return;
+              }
               void addItem(id, stock).then(() => {
                 setFeedback("Agregado");
                 window.setTimeout(() => setFeedback(null), 1500);
               }).catch(() => setFeedback("Sin stock"));
             }}
           >
-            {feedback === "Agregado" ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-            {stock < 1 ? "Sin stock" : feedback ?? "Agregar"}
+            {stock < 1 ? <Bell className="h-4 w-4" /> : feedback === "Agregado" ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+            {feedback ?? (stock < 1 ? "Avisarme cuando haya stock" : "Agregar")}
           </Button>
         </div>
       </div>
+      <StockRequestDialog open={requestOpen} onOpenChange={setRequestOpen} productId={id} productName={name} onSuccess={() => setFeedback("Solicitud enviada")} />
     </article>
   );
 };

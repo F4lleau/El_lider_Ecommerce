@@ -50,6 +50,19 @@ export const requireAuth = async (
   next();
 };
 
+export const optionalAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (!req.headers.authorization) {
+    next();
+    return;
+  }
+
+  void requireAuth(req, res, next);
+};
+
 export const requireRole =
   (...roles: UserRole[]) =>
   (req: Request, _res: Response, next: NextFunction): void => {

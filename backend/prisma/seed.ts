@@ -3,150 +3,92 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 import { slugify } from "../src/utils/slug.js";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
-const prisma = new PrismaClient({
-  adapter,
-});
+const categoriesData = [
+  ["Reposteria", "Ingredientes, moldes y herramientas para reposteria."],
+  ["Descartables", "Soluciones descartables para comercios y eventos."],
+  ["Cotillon", "Articulos para fiestas, celebraciones y decoracion."],
+  ["Envases", "Envases para conservar, presentar y entregar productos."],
+  ["Gastronomia", "Utensilios e insumos para cocinas profesionales."],
+] as const;
+
+const productsData = [
+  ["Harina 0000 1 kg", "Reposteria", 1450, 1750, 38, true, true, false],
+  ["Chocolate cobertura semiamargo 500 g", "Reposteria", 6890, 7590, 16, true, true, true],
+  ["Molde desmontable 24 cm", "Reposteria", 12500, null, 9, true, false, true],
+  ["Manga pastelera reutilizable", "Reposteria", 3490, null, 25, false, false, true],
+  ["Colorante alimentario rojo 30 ml", "Reposteria", 2290, null, 0, false, false, false],
+  ["Vasos termicos 240 ml x 50", "Descartables", 5990, 6790, 42, true, true, false],
+  ["Platos biodegradables x 25", "Descartables", 4290, null, 31, false, false, true],
+  ["Cubiertos descartables reforzados x 50", "Descartables", 3890, null, 28, false, false, false],
+  ["Servilletas blancas x 100", "Descartables", 2490, 2890, 54, false, true, false],
+  ["Bandejas de carton doradas x 10", "Descartables", 7190, null, 12, true, false, true],
+  ["Globos metalizados surtidos x 20", "Cotillon", 4990, 5790, 24, true, true, false],
+  ["Guirnalda feliz cumpleanos", "Cotillon", 2590, null, 18, false, false, true],
+  ["Velas numerales surtidas", "Cotillon", 1390, null, 45, false, false, false],
+  ["Cortina metalizada dorada", "Cotillon", 3290, 3990, 0, true, true, true],
+  ["Kit decoracion pastel", "Cotillon", 8490, null, 10, true, false, true],
+  ["Pote plastico con tapa 500 ml x 25", "Envases", 7990, 8990, 36, true, true, false],
+  ["Caja para torta 30 x 30 cm x 10", "Envases", 10990, null, 14, true, false, true],
+  ["Frasco PET transparente 1 litro x 12", "Envases", 13490, null, 8, false, false, false],
+  ["Bolsa kraft con manija x 25", "Envases", 9690, 10990, 20, false, true, true],
+  ["Envase bisagra para porcion x 50", "Envases", 15490, null, 0, true, false, false],
+  ["Espatula de silicona profesional", "Gastronomia", 4490, null, 17, true, false, true],
+  ["Cuchillo chef acero inoxidable", "Gastronomia", 18990, 21990, 7, true, true, false],
+  ["Tabla de corte gastronomica", "Gastronomia", 13990, null, 11, false, false, true],
+  ["Pinza de acero 30 cm", "Gastronomia", 5390, null, 22, false, false, false],
+  ["Balanza digital de cocina", "Gastronomia", 17990, 19990, 0, true, true, true],
+] as const;
 
 async function main(): Promise<void> {
-  await prisma.productImage.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.siteContent.deleteMany();
-
-  const categoriesData = [
-    {
-      name: "Tortas",
-      description: "Tortas artesanales para celebraciones y eventos.",
-    },
-    {
-      name: "Postres Individuales",
-      description: "Opciones listas para servir en porciones individuales.",
-    },
-    {
-      name: "Panaderia Dulce",
-      description: "Facturas, medialunas y panificados dulces frescos.",
-    },
-  ];
-
-  const categories = await Promise.all(
-    categoriesData.map((category) =>
-      prisma.category.create({
-        data: {
-          name: category.name,
-          slug: slugify(category.name),
-          description: category.description,
-          isActive: true,
-        },
-      }),
-    ),
-  );
-
-  const tortas = categories.find((item) => item.slug === "tortas");
-  const postres = categories.find((item) => item.slug === "postres-individuales");
-  const panaderia = categories.find((item) => item.slug === "panaderia-dulce");
-
-  if (!tortas || !postres || !panaderia) {
-    throw new Error("No se pudieron crear las categorias base para el seed");
+  const categories = new Map<string, number>();
+  for (const [name, description] of categoriesData) {
+    const category = await prisma.category.upsert({
+      where: { slug: slugify(name) },
+      update: { name, description, isActive: true },
+      create: { name, slug: slugify(name), description, isActive: true },
+    });
+    categories.set(name, category.id);
   }
 
-  const products = await Promise.all([
-    prisma.product.create({
-      data: {
-        name: "Torta Red Velvet",
-        slug: "torta-red-velvet",
-        description: "Bizcocho humedo de cacao, relleno y cobertura de queso crema.",
-        price: "28990.00",
-        compareAtPrice: "32990.00",
-        stock: 12,
-        isFeatured: true,
-        isOffer: true,
-        isNew: false,
-        isActive: true,
-        categoryId: tortas.id,
+  for (const [name, categoryName, price, compareAtPrice, stock, isFeatured, isOffer, isNew] of productsData) {
+    const categoryId = categories.get(categoryName);
+    if (!categoryId) throw new Error(`Categoria faltante: ${categoryName}`);
+    const slug = slugify(name);
+    const product = await prisma.product.upsert({
+      where: { slug },
+      update: {
+        name, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
+        price: price.toFixed(2), compareAtPrice: compareAtPrice?.toFixed(2) ?? null, stock,
+        isFeatured, isOffer, isNew, isActive: true, categoryId,
       },
-    }),
-    prisma.product.create({
-      data: {
-        name: "Cheesecake Frutos Rojos",
-        slug: "cheesecake-frutos-rojos",
-        description: "Base crocante con crema de queso y coulis de frutos rojos.",
-        price: "21990.00",
-        compareAtPrice: null,
-        stock: 20,
-        isFeatured: true,
-        isOffer: false,
-        isNew: true,
-        isActive: true,
-        categoryId: postres.id,
+      create: {
+        name, slug, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
+        price: price.toFixed(2), compareAtPrice: compareAtPrice?.toFixed(2) ?? null, stock,
+        isFeatured, isOffer, isNew, isActive: true, categoryId,
       },
-    }),
-    prisma.product.create({
+    });
+    await prisma.productImage.deleteMany({ where: { productId: product.id } });
+    await prisma.productImage.create({
       data: {
-        name: "Caja de Medialunas Manteca",
-        slug: "caja-medialunas-manteca",
-        description: "Docena de medialunas de manteca recien horneadas.",
-        price: "8990.00",
-        compareAtPrice: "9990.00",
-        stock: 40,
-        isFeatured: false,
-        isOffer: true,
-        isNew: true,
-        isActive: true,
-        categoryId: panaderia.id,
+        productId: product.id,
+        url: `https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80&sig=${product.id}`,
+        alt: name,
+        isPrimary: true,
       },
-    }),
-  ]);
+    });
+  }
 
-  await prisma.productImage.createMany({
-    data: [
-      {
-        productId: products[0].id,
-        url: "https://images.unsplash.com/photo-1559622214-f8a9850965bb",
-        alt: "Torta red velvet",
-        isPrimary: true,
-      },
-      {
-        productId: products[1].id,
-        url: "https://images.unsplash.com/photo-1690980559928-c72f5bb66911",
-        alt: "Cheesecake de frutos rojos",
-        isPrimary: true,
-      },
-      {
-        productId: products[2].id,
-        url: "https://images.unsplash.com/photo-1519864600265-abb23847ef2c",
-        alt: "Caja de medialunas",
-        isPrimary: true,
-      },
-    ],
-  });
-
-  await prisma.siteContent.createMany({
-    data: [
-      {
-        key: "home-hero",
-        title: "Hero Home",
-        content:
-          "Pasteleria artesanal hecha en el dia con ingredientes seleccionados.",
-        isPublished: true,
-      },
-      {
-        key: "shipping-info",
-        title: "Informacion de Envios",
-        content: "Enviamos en el dia en CABA y GBA para pedidos antes de las 14:00.",
-        isPublished: true,
-      },
-    ],
+  await prisma.siteContent.upsert({
+    where: { key: "home-hero" },
+    update: { title: "Hero Home", content: "Todo para reposteria, eventos y gastronomia.", isPublished: true },
+    create: { key: "home-hero", title: "Hero Home", content: "Todo para reposteria, eventos y gastronomia.", isPublished: true },
   });
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
+  .then(() => prisma.$disconnect())
   .catch(async (error: unknown) => {
     console.error(error);
     await prisma.$disconnect();

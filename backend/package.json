@@ -15,7 +15,7 @@
     "prisma:studio": "prisma studio",
     "seed": "prisma db seed",
     "admin:create": "tsx prisma/seed-admin.ts",
-    "test": "tsx --test --test-concurrency=1 tests/auth.test.ts tests/cart.test.ts",
+    "test": "tsx --test --test-concurrency=1 tests/auth.test.ts tests/cart.test.ts tests/catalog.test.ts",
     "test:cart": "tsx --test --test-concurrency=1 tests/cart.test.ts"
   },
   "keywords": [],

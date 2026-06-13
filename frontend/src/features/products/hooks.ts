@@ -3,7 +3,7 @@ import { productsApi } from "./api";
 import type { Product } from "../../types/product";
 
 type UseProductsOptions = {
-  mode?: "all" | "offers" | "featured" | "new";
+  mode?: "all" | "offers" | "featured" | "new" | "best-sellers";
 };
 
 export function useProducts(options: UseProductsOptions = {}) {
@@ -22,8 +22,10 @@ export function useProducts(options: UseProductsOptions = {}) {
             ? await productsApi.listOffers()
             : mode === "featured"
               ? await productsApi.listFeatured()
-              : mode === "new"
+            : mode === "new"
                 ? await productsApi.listNew()
+                : mode === "best-sellers"
+                  ? await productsApi.listBestSellers()
                 : await productsApi.list();
         setData(result);
       } catch (err) {

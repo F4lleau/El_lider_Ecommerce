@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { authRouter } from "../modules/auth/auth.routes.js";
 import { usersRouter } from "../modules/users/users.routes.js";
-import { categoriesRouter } from "../modules/categories/categories.routes.js";
-import { productsRouter } from "../modules/products/products.routes.js";
+import { adminCategoriesRouter, categoriesRouter } from "../modules/categories/categories.routes.js";
+import { adminProductsRouter, productsRouter } from "../modules/products/products.routes.js";
 import { cartRouter } from "../modules/cart/cart.routes.js";
 import { ordersRouter } from "../modules/orders/orders.routes.js";
 import { siteContentRouter } from "../modules/site-content/site-content.routes.js";
+import { stockRequestsRouter } from "../modules/stock-requests/stock-requests.routes.js";
 
 const apiRouter = Router();
 
@@ -13,6 +14,9 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/categories", categoriesRouter);
 apiRouter.use("/products", productsRouter);
+apiRouter.use("/admin/products", adminProductsRouter);
+apiRouter.use("/admin/categories", adminCategoriesRouter);
+apiRouter.use(stockRequestsRouter);
 apiRouter.use("/cart", cartRouter);
 apiRouter.use("/orders", ordersRouter);
 apiRouter.use("/site-content", siteContentRouter);

@@ -6,5 +6,6 @@ export const productsApi = {
   listFeatured: () => apiClient.get<Product[]>("/products/featured"),
   listOffers: () => apiClient.get<Product[]>("/products/offers"),
   listNew: () => apiClient.get<Product[]>("/products/new"),
+  listBestSellers: () => apiClient.get<Product[]>("/products/best-sellers"),
   getById: (id: number) => apiClient.get<Product>(`/products/${id}`),
 };
