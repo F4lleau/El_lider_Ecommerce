@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { useAuthStore } from "../features/auth/store";
 import { stockRequestsApi } from "../features/stock-requests/api";
@@ -19,7 +20,7 @@ export default function AccountPage() {
         <h1 className="font-heading text-3xl font-bold">Mi cuenta</h1>
         <p>{user?.firstName} {user?.lastName}</p>
         <p className="text-muted-foreground">{user?.email}</p>
-        <Button variant="outline" onClick={logout}>Cerrar sesión</Button>
+        <div className="flex flex-wrap gap-3"><Button asChild><Link to="/mi-cuenta/pedidos">Ver mis pedidos</Link></Button><Button variant="outline" onClick={logout}>Cerrar sesión</Button></div>
       </div>
       <section>
         <h2 className="mb-4 flex items-center gap-2 font-heading text-xl font-bold"><Bell className="h-5 w-5 text-primary" /> Avisos de stock</h2>

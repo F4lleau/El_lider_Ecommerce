@@ -9,6 +9,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL es requerido"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET es requerido"),
   JWT_EXPIRES_IN: z.string().default("7d"),
+  DEFAULT_SHIPPING_COST: z.coerce.number().min(0).default(3000),
+  PICKUP_ADDRESS: z.string().default("Av. Belgrano 103"),
 });
 
 export const env = envSchema.parse(process.env);

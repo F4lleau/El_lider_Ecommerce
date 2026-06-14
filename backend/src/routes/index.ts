@@ -4,7 +4,7 @@ import { usersRouter } from "../modules/users/users.routes.js";
 import { adminCategoriesRouter, categoriesRouter } from "../modules/categories/categories.routes.js";
 import { adminProductsRouter, productsRouter } from "../modules/products/products.routes.js";
 import { cartRouter } from "../modules/cart/cart.routes.js";
-import { ordersRouter } from "../modules/orders/orders.routes.js";
+import { adminOrdersRouter, checkoutRouter, meOrdersRouter, ordersRouter } from "../modules/orders/orders.routes.js";
 import { siteContentRouter } from "../modules/site-content/site-content.routes.js";
 import { stockRequestsRouter } from "../modules/stock-requests/stock-requests.routes.js";
 
@@ -19,6 +19,9 @@ apiRouter.use("/admin/categories", adminCategoriesRouter);
 apiRouter.use(stockRequestsRouter);
 apiRouter.use("/cart", cartRouter);
 apiRouter.use("/orders", ordersRouter);
+apiRouter.use("/checkout", checkoutRouter);
+apiRouter.use("/me/orders", meOrdersRouter);
+apiRouter.use("/admin/orders", adminOrdersRouter);
 apiRouter.use("/site-content", siteContentRouter);
 
 export { apiRouter };

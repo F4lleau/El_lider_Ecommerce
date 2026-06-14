@@ -1,38 +1,37 @@
-import type { Product } from "./product";
+import type { CartItem, GuestCartItem } from "./cart";
 
-export interface Address {
-  id: string;
-  fullName: string;
-  phone: string;
-  street: string;
-  city: string;
-  state?: string | null;
-  postalCode?: string | null;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+export type DeliveryMethod = "PICKUP" | "SHIPPING";
+export type OrderStatus = "PENDING_PAYMENT" | "PAID" | "CONFIRMED" | "PREPARING" | "READY_FOR_PICKUP" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED" | "COMPLETED";
+export type PaymentStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "REFUNDED" | "IN_PROCESS";
 
-export interface OrderItem {
-  id: string;
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  product: Product;
-}
+export type ShippingAddress = {
+  recipient: string; phone: string; street: string; number: string; floor?: string;
+  apartment?: string; city: string; province: string; postalCode: string; references?: string;
+};
 
-export interface Order {
-  id: string;
-  userId: string;
-  addressId: string;
-  total: number;
-  status: string;
-  address: Address;
-  items: OrderItem[];
-  createdAt: string;
-  updatedAt: string;
-}
+export type CheckoutPayload = {
+  deliveryMethod: DeliveryMethod;
+  customer?: { name: string; email: string; phone: string };
+  address?: ShippingAddress;
+  items?: GuestCartItem[];
+  notes?: string;
+};
 
-export interface CheckoutPayload {
-  addressId: string;
-}
+export type CheckoutSummary = {
+  customer: { name: string; email: string; phone: string };
+  deliveryMethod: DeliveryMethod;
+  items: CartItem[];
+  summary: { subtotal: number; shippingCost: number; total: number };
+  pickupAddress?: string;
+};
+
+export type OrderItem = {
+  id: number; productId: number; productName: string; productSlug: string;
+  quantity: number; unitPrice: string; totalPrice: string;
+};
+
+export type Order = {
+  id: number; orderNumber: string; trackingCode: string; userId: number | null;
+  status: OrderStatus; paymentStatus: PaymentStatus; deliveryMethod: DeliveryMethod;
+  subtotal: string; shippingCost: string; total: string; items: OrderItem[]; createdAt: string;
+};

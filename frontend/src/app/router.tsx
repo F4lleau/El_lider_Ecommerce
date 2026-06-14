@@ -16,6 +16,12 @@ import { AdminRoute } from "../components/auth/AdminRoute";
 import AccountPage from "../pages/AccountPage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import AccessDeniedPage from "../pages/AccessDeniedPage";
+import CheckoutPage from "../pages/CheckoutPage";
+import CheckoutConfirmationPage from "../pages/CheckoutConfirmationPage";
+import OrderTrackingPage from "../pages/OrderTrackingPage";
+import MyOrdersPage from "../pages/MyOrdersPage";
+import MyOrderDetailPage from "../pages/MyOrderDetailPage";
+import TrackingSearchPage from "../pages/TrackingSearchPage";
 
 const RootLayout = () => (
   <AppLayout>
@@ -43,10 +49,18 @@ export const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
       { path: "registro", element: <RegisterPage /> },
       { path: "carrito", element: <CartPage /> },
+      { path: "checkout", element: <CheckoutPage /> },
+      { path: "checkout/confirmacion", element: <CheckoutConfirmationPage /> },
+      { path: "pedido/:trackingCode", element: <OrderTrackingPage /> },
+      { path: "seguimiento", element: <TrackingSearchPage /> },
       { path: "acceso-denegado", element: <AccessDeniedPage /> },
       {
         element: <ProtectedRoute />,
-        children: [{ path: "mi-cuenta", element: <AccountPage /> }],
+        children: [
+          { path: "mi-cuenta", element: <AccountPage /> },
+          { path: "mi-cuenta/pedidos", element: <MyOrdersPage /> },
+          { path: "mi-cuenta/pedidos/:id", element: <MyOrderDetailPage /> },
+        ],
       },
       {
         element: <AdminRoute />,

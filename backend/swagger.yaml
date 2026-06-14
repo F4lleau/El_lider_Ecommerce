@@ -439,41 +439,151 @@ paths:
         "200": { description: Item eliminado }
         "401": { description: Token requerido }
         "404": { description: Item no encontrado o ajeno }
-  /orders:
+  /checkout/validate:
+    post:
+      summary: Validar checkout y calcular totales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutRequest" }
+      responses:
+        "200": { description: Checkout validado }
+        "400": { description: Datos inválidos o carrito vacío }
+        "404": { description: Producto inexistente o inactivo }
+        "409": { description: Stock insuficiente }
+  /checkout:
+    post:
+      summary: Crear orden invitado o autenticado
+      description: Crea una orden PENDING_PAYMENT con pago PENDING sin descontar stock.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutRequest" }
+      responses:
+        "201": { description: Orden creada }
+        "400": { description: Datos inválidos o carrito vacío }
+        "404": { description: Producto inexistente o inactivo }
+        "409": { description: Stock insuficiente }
+  /orders/track/{trackingCode}:
     get:
-      summary: Listar órdenes propias
+      summary: Seguimiento público por tracking
+      parameters:
+        - { in: path, name: trackingCode, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Estado, productos y totales }
+        "404": { description: Pedido no encontrado }
+  /me/orders:
+    get:
+      summary: Listar pedidos propios
       security: [{ bearerAuth: [] }]
       responses:
-        "200": { description: Lista de órdenes }
-  /orders/{id}:
+        "200": { description: Pedidos propios }
+        "401": { description: Token requerido }
+  /me/orders/{id}:
     get:
-      summary: Detalle de orden propia
+      summary: Detalle de pedido propio
       security: [{ bearerAuth: [] }]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: integer }
+        - { in: path, name: id, required: true, schema: { type: integer } }
       responses:
-        "200": { description: Orden }
-  /orders/checkout:
-    post:
-      summary: Checkout y crear orden
+        "200": { description: Pedido propio }
+        "401": { description: Token requerido }
+        "404": { description: Pedido no encontrado o ajeno }
+  /admin/orders:
+    get:
+      summary: Listar pedidos para admin
       security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: deliveryMethod, schema: { type: string, enum: [PICKUP, SHIPPING] } }
+        - { in: query, name: from, schema: { type: string, format: date-time } }
+        - { in: query, name: to, schema: { type: string, format: date-time } }
+      responses:
+        "200": { description: Pedidos filtrados }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+  /admin/orders/{id}:
+    get:
+      summary: Detalle de pedido para admin
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Pedido }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Pedido no encontrado }
+  /admin/orders/{id}/status:
+    patch:
+      summary: Cambiar estado operativo de pedido
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [status]
               properties:
-                address: { type: object }
-                paymentMethod: { type: string }
-                notes: { type: string }
+                status: { type: string, enum: [PENDING_PAYMENT, PAID, CONFIRMED, PREPARING, READY_FOR_PICKUP, SHIPPED, DELIVERED, CANCELLED, REFUNDED, COMPLETED] }
       responses:
-        "201": { description: Orden creada }
+        "200": { description: Estado actualizado }
+        "400": { description: Estado inválido }
+        "401": { description: Token requerido }
+        "403": { description: Rol admin requerido }
+        "404": { description: Pedido no encontrado }
+        "409": { description: Transición no permitida }
 components:
   schemas:
+    CheckoutRequest:
+      type: object
+      required: [deliveryMethod]
+      properties:
+        deliveryMethod: { type: string, enum: [PICKUP, SHIPPING] }
+        customer:
+          type: object
+          properties:
+            name: { type: string }
+            email: { type: string, format: email }
+            phone: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            required: [productId, quantity]
+            properties:
+              productId: { type: integer, minimum: 1 }
+              quantity: { type: integer, minimum: 1, maximum: 100 }
+        address:
+          type: object
+          description: Obligatorio para SHIPPING.
+          properties:
+            recipient: { type: string }
+            phone: { type: string }
+            street: { type: string }
+            number: { type: string }
+            floor: { type: string }
+            apartment: { type: string }
+            city: { type: string }
+            province: { type: string }
+            postalCode: { type: string }
+            references: { type: string }
+        notes: { type: string }
+    Order:
+      type: object
+      properties:
+        orderNumber: { type: string }
+        trackingCode: { type: string }
+        status: { type: string }
+        paymentStatus: { type: string }
+        deliveryMethod: { type: string }
+        subtotal: { type: string }
+        shippingCost: { type: string }
+        total: { type: string }
     ProductWrite:
       type: object
       required: [name, price, stock, categoryId]

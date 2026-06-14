@@ -1,27 +1,49 @@
+import { DeliveryMethod, OrderStatus } from "@prisma/client";
 import { z } from "zod";
+import { cartItemsSchema } from "../cart/cart.schema.js";
 
-export const orderIdParamsSchema = z.object({
-	id: z.coerce.number().int().positive("El id de la orden debe ser valido"),
+export const orderIdParamsSchema = z.object({ id: z.coerce.number().int().positive("El id de la orden debe ser valido") });
+export const trackingParamsSchema = z.object({ trackingCode: z.string().trim().min(6) });
+
+const customerSchema = z.object({
+  name: z.string().trim().min(2).max(160),
+  email: z.string().trim().email(),
+  phone: z.string().trim().min(6).max(40),
 });
 
-const checkoutAddressSchema = z.object({
-	label: z.string().trim().max(100).optional(),
-	recipient: z.string().trim().min(2, "El destinatario es requerido"),
-	phone: z.string().trim().min(6).max(30).optional(),
-	street: z.string().trim().min(2, "La calle es requerida"),
-	number: z.string().trim().min(1, "La altura es requerida"),
-	apartment: z.string().trim().max(40).optional(),
-	city: z.string().trim().min(2, "La ciudad es requerida"),
-	state: z.string().trim().max(100).optional(),
-	postalCode: z.string().trim().min(3, "El codigo postal es requerido"),
-	country: z.string().trim().min(2).max(3).default("AR"),
-	isDefault: z.boolean().optional(),
+const shippingAddressSchema = z.object({
+  recipient: z.string().trim().min(2),
+  phone: z.string().trim().min(6).max(40),
+  street: z.string().trim().min(2),
+  number: z.string().trim().min(1),
+  floor: z.string().trim().max(20).optional(),
+  apartment: z.string().trim().max(40).optional(),
+  city: z.string().trim().min(2),
+  province: z.string().trim().min(2),
+  postalCode: z.string().trim().min(3),
+  references: z.string().trim().max(500).optional(),
 });
 
 export const checkoutSchema = z.object({
-	address: checkoutAddressSchema,
-	paymentMethod: z.string().trim().max(60).optional(),
-	notes: z.string().trim().max(300).optional(),
+  deliveryMethod: z.nativeEnum(DeliveryMethod),
+  customer: customerSchema.optional(),
+  address: shippingAddressSchema.optional(),
+  items: cartItemsSchema.shape.items.optional(),
+  notes: z.string().trim().max(500).optional(),
+}).superRefine((data, ctx) => {
+  if (data.deliveryMethod === DeliveryMethod.SHIPPING && !data.address) {
+    ctx.addIssue({ code: "custom", path: ["address"], message: "La direccion es requerida para envio" });
+  }
 });
 
+export const adminOrdersQuerySchema = z.object({
+  status: z.nativeEnum(OrderStatus).optional(),
+  deliveryMethod: z.nativeEnum(DeliveryMethod).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+});
+
+export const updateOrderStatusSchema = z.object({ status: z.nativeEnum(OrderStatus) });
+
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+export type AdminOrdersQuery = z.infer<typeof adminOrdersQuerySchema>;

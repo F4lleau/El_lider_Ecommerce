@@ -18,6 +18,33 @@ enum StockRequestStatus {
   CANCELLED
 }
 
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  REFUNDED
+  IN_PROCESS
+}
+
+enum DeliveryMethod {
+  PICKUP
+  SHIPPING
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   firstName    String
@@ -103,14 +130,34 @@ model CartItem {
 
 model Order {
   id               Int         @id @default(autoincrement())
-  userId           Int
+  orderNumber      String      @unique @default(uuid())
+  trackingCode     String      @unique @default(uuid())
+  userId           Int?
   addressId        Int?
-  status           String      @default("PENDING")
+  guestName        String?
+  guestEmail       String?
+  guestPhone       String?
+  status           OrderStatus @default(PENDING_PAYMENT)
+  paymentStatus    PaymentStatus @default(PENDING)
+  deliveryMethod   DeliveryMethod @default(PICKUP)
+  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
+  shippingCost     Decimal     @default(0) @db.Decimal(10, 2)
+  total            Decimal     @default(0) @db.Decimal(10, 2)
   totalAmount      Decimal     @db.Decimal(10, 2)
   paymentMethod    String?
   paymentReference String?
   notes            String?
-  user             User        @relation(fields: [userId], references: [id])
+  shippingRecipient String?
+  shippingPhone     String?
+  shippingStreet    String?
+  shippingNumber    String?
+  shippingFloor     String?
+  shippingApartment String?
+  shippingCity      String?
+  shippingProvince  String?
+  shippingPostalCode String?
+  shippingReferences String?
+  user             User?       @relation(fields: [userId], references: [id])
   address          Address?    @relation(fields: [addressId], references: [id])
   items            OrderItem[]
   createdAt        DateTime    @default(now())
@@ -124,6 +171,8 @@ model OrderItem {
   id         Int      @id @default(autoincrement())
   orderId    Int
   productId  Int
+  productName String @default("")
+  productSlug String @default("")
   quantity   Int
   unitPrice  Decimal  @db.Decimal(10, 2)
   totalPrice Decimal  @db.Decimal(10, 2)

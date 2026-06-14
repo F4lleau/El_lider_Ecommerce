@@ -3,7 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import "dotenv/config";
 import { hashValue } from "../src/utils/hash.js";
 
-const { ADMIN_EMAIL, ADMIN_PASSWORD, DATABASE_URL } = process.env;
+const { ADMIN_EMAIL, ADMIN_NAME = "Admin El Lider", ADMIN_PASSWORD, DATABASE_URL } = process.env;
 
 if (!DATABASE_URL || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
   throw new Error("DATABASE_URL, ADMIN_EMAIL y ADMIN_PASSWORD son requeridos");
@@ -18,13 +18,15 @@ const prisma = new PrismaClient({
 });
 
 const passwordHash = await hashValue(ADMIN_PASSWORD);
+const [firstName, ...lastNameParts] = ADMIN_NAME.trim().split(/\s+/);
+const lastName = lastNameParts.join(" ") || "Admin";
 
 await prisma.user.upsert({
   where: { email: ADMIN_EMAIL.toLowerCase() },
-  update: { role: UserRole.ADMIN, passwordHash },
+  update: { firstName, lastName, role: UserRole.ADMIN, passwordHash },
   create: {
-    firstName: "Admin",
-    lastName: "El Lider",
+    firstName,
+    lastName,
     email: ADMIN_EMAIL.toLowerCase(),
     passwordHash,
     role: UserRole.ADMIN,
