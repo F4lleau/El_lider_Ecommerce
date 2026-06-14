@@ -7,6 +7,7 @@ import { cartService } from "../cart/cart.service.js";
 import type { AdminOrdersQuery, CheckoutInput } from "./orders.schema.js";
 
 const orderInclude = {
+  user: { select: { id: true, firstName: true, lastName: true, email: true } },
   items: { include: { product: { select: { id: true, name: true, slug: true, images: { where: { isPrimary: true }, take: 1 } } } } },
 };
 

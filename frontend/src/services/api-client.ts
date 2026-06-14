@@ -17,6 +17,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const payload = (await response.json()) as ApiResponse<T>;
 
   if (!response.ok || !payload.ok) {
+    if (response.status === 401 && !path.startsWith("/auth/")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth-user");
+      window.location.assign("/login");
+    }
     throw new Error(payload?.message ?? "Error inesperado en la API");
   }
 

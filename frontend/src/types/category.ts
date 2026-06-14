@@ -1,5 +1,5 @@
-import { LucideIcon } from "lucide-react";
-import { Product } from "./product";
+import type { LucideIcon } from "lucide-react";
+import type { Product } from "./product";
 
 
 export type Category = {

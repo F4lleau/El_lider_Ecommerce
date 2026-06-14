@@ -22,6 +22,14 @@ import OrderTrackingPage from "../pages/OrderTrackingPage";
 import MyOrdersPage from "../pages/MyOrdersPage";
 import MyOrderDetailPage from "../pages/MyOrderDetailPage";
 import TrackingSearchPage from "../pages/TrackingSearchPage";
+import AdminLayout from "../components/admin/AdminLayout";
+import AdminProductsPage from "../pages/AdminProductsPage";
+import AdminProductFormPage from "../pages/AdminProductFormPage";
+import AdminCategoriesPage from "../pages/AdminCategoriesPage";
+import AdminCategoryFormPage from "../pages/AdminCategoryFormPage";
+import AdminOrdersPage from "../pages/AdminOrdersPage";
+import AdminOrderDetailPage from "../pages/AdminOrderDetailPage";
+import AdminStockRequestsPage from "../pages/AdminStockRequestsPage";
 
 const RootLayout = () => (
   <AppLayout>
@@ -62,14 +70,27 @@ export const router = createBrowserRouter([
           { path: "mi-cuenta/pedidos/:id", element: <MyOrderDetailPage /> },
         ],
       },
-      {
-        element: <AdminRoute />,
-        children: [
-          { path: "admin", element: <Navigate to="/admin/dashboard" replace /> },
-          { path: "admin/dashboard", element: <AdminDashboardPage /> },
-        ],
-      },
       { path: "*", element: <NotFoundPage /> },
     ],
+  },
+  {
+    element: <AdminRoute />,
+    children: [{
+      path: "admin",
+      element: <AdminLayout />,
+      children: [
+        { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+        { path: "dashboard", element: <AdminDashboardPage /> },
+        { path: "productos", element: <AdminProductsPage /> },
+        { path: "productos/nuevo", element: <AdminProductFormPage /> },
+        { path: "productos/:id/editar", element: <AdminProductFormPage /> },
+        { path: "categorias", element: <AdminCategoriesPage /> },
+        { path: "categorias/nueva", element: <AdminCategoryFormPage /> },
+        { path: "categorias/:id/editar", element: <AdminCategoryFormPage /> },
+        { path: "pedidos", element: <AdminOrdersPage /> },
+        { path: "pedidos/:id", element: <AdminOrderDetailPage /> },
+        { path: "solicitudes-stock", element: <AdminStockRequestsPage /> },
+      ],
+    }],
   },
 ]);

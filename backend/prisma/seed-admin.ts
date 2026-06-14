@@ -18,7 +18,8 @@ const prisma = new PrismaClient({
 });
 
 const passwordHash = await hashValue(ADMIN_PASSWORD);
-const [firstName, ...lastNameParts] = ADMIN_NAME.trim().split(/\s+/);
+const [rawFirstName, ...lastNameParts] = ADMIN_NAME.trim().split(/\s+/);
+const firstName = rawFirstName ?? "Admin";
 const lastName = lastNameParts.join(" ") || "Admin";
 
 await prisma.user.upsert({
