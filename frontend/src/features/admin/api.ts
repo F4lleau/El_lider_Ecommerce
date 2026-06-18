@@ -3,7 +3,7 @@ import type { AdminCategory, AdminDashboardData, AdminOrder, AdminStockRequest, 
 import type { Product } from "@/types/product";
 
 export const adminProductsApi = {
-  list: () => apiClient.get<Product[]>("/admin/products"),
+  list: (query?: string) => apiClient.get<Product[]>(`/admin/products${query ? `?q=${encodeURIComponent(query)}` : ""}`),
   get: (id: number) => apiClient.get<Product>(`/admin/products/${id}`),
   create: (payload: ProductWrite) => apiClient.post<Product>("/admin/products", payload),
   update: (id: number, payload: Partial<ProductWrite>) => apiClient.patch<Product>(`/admin/products/${id}`, payload),

@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
 import { slugify } from "../../utils/slug.js";
-import type { CreateProductInput, UpdatePriceInput, UpdateProductInput, UpdateStockInput } from "./products.schema.js";
+import type { AdminProductsQuery, CreateProductInput, UpdatePriceInput, UpdateProductInput, UpdateStockInput } from "./products.schema.js";
 
 const defaultInclude = {
   category: { select: { id: true, name: true, slug: true } },
@@ -19,6 +19,14 @@ const ensureCategory = async (categoryId: number) => {
 const ensureUniqueSlug = async (slug: string, excludeId?: number) => {
   const existing = await prisma.product.findFirst({ where: { slug, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
   if (existing) throw new ApiError(409, "Ya existe un producto con ese slug");
+};
+
+const normalizeSku = (sku: string | null | undefined) => sku?.trim().toUpperCase() || null;
+
+const ensureUniqueSku = async (sku: string | null, excludeId?: number) => {
+  if (!sku) return;
+  const existing = await prisma.product.findFirst({ where: { sku, ...(excludeId ? { id: { not: excludeId } } : {}) }, select: { id: true } });
+  if (existing) throw new ApiError(409, "Ya existe un producto con ese SKU");
 };
 
 const list = () => prisma.product.findMany({ where: publicWhere, include: defaultInclude, orderBy: { createdAt: "desc" } });
@@ -55,7 +63,11 @@ const listBestSellers = async () => {
   });
 };
 
-const listAdmin = () => prisma.product.findMany({ include: defaultInclude, orderBy: { createdAt: "desc" } });
+const listAdmin = (query: AdminProductsQuery = {}) => prisma.product.findMany({
+  ...(query.q && { where: { OR: [{ name: { contains: query.q, mode: "insensitive" as const } }, { sku: { contains: query.q, mode: "insensitive" as const } }] } }),
+  include: defaultInclude,
+  orderBy: { createdAt: "desc" },
+});
 
 const getAdminById = async (id: number) => {
   const product = await prisma.product.findUnique({ where: { id }, include: defaultInclude });
@@ -66,10 +78,12 @@ const getAdminById = async (id: number) => {
 const create = async (payload: CreateProductInput) => {
   await ensureCategory(payload.categoryId);
   const slug = slugify(payload.slug ?? payload.name);
+  const sku = normalizeSku(payload.sku);
   await ensureUniqueSlug(slug);
+  await ensureUniqueSku(sku);
   return prisma.product.create({
     data: {
-      name: payload.name, slug, description: payload.description ?? null,
+      name: payload.name, slug, sku, description: payload.description ?? null,
       price: payload.price.toFixed(2), compareAtPrice: payload.compareAtPrice?.toFixed(2) ?? null,
       stock: payload.stock, isFeatured: payload.isFeatured ?? false, isOffer: payload.isOffer ?? false,
       isNew: payload.isNew ?? false, isActive: payload.isActive ?? true, categoryId: payload.categoryId,
@@ -83,7 +97,9 @@ const update = async (id: number, payload: UpdateProductInput) => {
   await getAdminById(id);
   if (payload.categoryId !== undefined) await ensureCategory(payload.categoryId);
   const slug = payload.slug !== undefined || payload.name !== undefined ? slugify(payload.slug ?? payload.name ?? "") : undefined;
+  const sku = payload.sku !== undefined ? normalizeSku(payload.sku) : undefined;
   if (slug) await ensureUniqueSlug(slug, id);
+  if (sku !== undefined) await ensureUniqueSku(sku, id);
   return prisma.$transaction(async (tx) => {
     if (payload.images) {
       await tx.productImage.deleteMany({ where: { productId: id } });
@@ -92,7 +108,7 @@ const update = async (id: number, payload: UpdateProductInput) => {
     return tx.product.update({
       where: { id },
       data: {
-        ...(payload.name !== undefined && { name: payload.name }), ...(slug && { slug }),
+        ...(payload.name !== undefined && { name: payload.name }), ...(slug && { slug }), ...(sku !== undefined && { sku }),
         ...(payload.description !== undefined && { description: payload.description }),
         ...(payload.price !== undefined && { price: payload.price.toFixed(2) }),
         ...(payload.compareAtPrice !== undefined && { compareAtPrice: payload.compareAtPrice?.toFixed(2) ?? null }),

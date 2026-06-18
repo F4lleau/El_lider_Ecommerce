@@ -28,7 +28,7 @@ before(async () => {
     prisma.category.create({ data: { name: marker, slug: marker } }),
   ]);
   const [product, empty] = await Promise.all([
-    prisma.product.create({ data: { name: `${marker}-product`, slug: `${marker}-product`, price: "100.00", stock: 10, isFeatured: true, isOffer: true, isNew: true, categoryId: category.id } }),
+    prisma.product.create({ data: { name: `${marker}-product`, slug: `${marker}-product`, sku: `${marker}-SKU`.toUpperCase(), price: "100.00", stock: 10, isFeatured: true, isOffer: true, isNew: true, categoryId: category.id } }),
     prisma.product.create({ data: { name: `${marker}-empty`, slug: `${marker}-empty`, price: "200.00", stock: 0, categoryId: category.id } }),
   ]);
   await prisma.order.create({ data: { userId: user.id, status: "COMPLETED", totalAmount: "300.00", items: { create: { productId: product.id, quantity: 3, unitPrice: "100.00", totalPrice: "300.00" } } } });
@@ -64,6 +64,8 @@ describe("catalogo publico", () => {
     const best = await request("/api/products/best-sellers");
     assert.equal(best.response.status, 200);
     assert.equal(((best.body.data as Array<{ id: number }>)[0]?.id), productId);
+    const listed = await request("/api/products");
+    assert.equal((listed.body.data as Array<{ id: number; sku: string | null }>).find((item) => item.id === productId)?.sku, `${marker}-SKU`.toUpperCase());
   });
 });
 
@@ -78,6 +80,21 @@ describe("ABM admin", () => {
     assert.equal((await request(`/api/admin/products/${id}/stock`, adminToken, { method: "PATCH", body: JSON.stringify({ stock: 8 }) })).response.status, 200);
     const removed = await request(`/api/admin/products/${id}`, adminToken, { method: "DELETE" });
     assert.equal((removed.body.data as { isActive: boolean }).isActive, false);
+  });
+
+  test("crea, normaliza, edita, busca y rechaza SKU duplicado", async () => {
+    const sku = `${marker}-sku-created`;
+    const created = await request("/api/admin/products", adminToken, { method: "POST", body: JSON.stringify({ name: `${marker}-sku-product`, sku: ` ${sku} `, price: 500, stock: 4, categoryId }) });
+    assert.equal(created.response.status, 201);
+    const product = created.body.data as { id: number; sku: string };
+    assert.equal(product.sku, sku.toUpperCase());
+    const duplicate = await request("/api/admin/products", adminToken, { method: "POST", body: JSON.stringify({ name: `${marker}-duplicate`, sku, price: 500, stock: 4, categoryId }) });
+    assert.equal(duplicate.response.status, 409);
+    const editedSku = `${marker}-sku-edited`.toUpperCase();
+    const edited = await request(`/api/admin/products/${product.id}`, adminToken, { method: "PATCH", body: JSON.stringify({ sku: editedSku }) });
+    assert.equal((edited.body.data as { sku: string }).sku, editedSku);
+    const search = await request(`/api/admin/products?q=${encodeURIComponent(editedSku)}`, adminToken);
+    assert.equal((search.body.data as Array<{ id: number }>)[0]?.id, product.id);
   });
 
   test("crea y edita categoria", async () => {

@@ -38,7 +38,7 @@ const mapCartResponse = (cart: {
     quantity: number;
     createdAt: Date;
     updatedAt: Date;
-    product: { price: unknown; name: string; slug: string };
+    product: { price: unknown; name: string; slug: string; sku: string | null };
   }>;
 }) => {
   const subtotal = cart.items.reduce(

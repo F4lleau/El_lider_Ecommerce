@@ -41,6 +41,14 @@ const productsData = [
   ["Balanza digital de cocina", "Gastronomia", 17990, 19990, 0, true, true, true],
 ] as const;
 
+const skuPrefixes: Record<(typeof categoriesData)[number][0], string> = {
+  Reposteria: "REP",
+  Descartables: "DESC",
+  Cotillon: "COT",
+  Envases: "ENV",
+  Gastronomia: "GAST",
+};
+
 async function main(): Promise<void> {
   const categories = new Map<string, number>();
   for (const [name, description] of categoriesData) {
@@ -52,19 +60,23 @@ async function main(): Promise<void> {
     categories.set(name, category.id);
   }
 
+  const categorySkuCounters = new Map<string, number>();
   for (const [name, categoryName, price, compareAtPrice, stock, isFeatured, isOffer, isNew] of productsData) {
     const categoryId = categories.get(categoryName);
     if (!categoryId) throw new Error(`Categoria faltante: ${categoryName}`);
     const slug = slugify(name);
+    const skuNumber = (categorySkuCounters.get(categoryName) ?? 0) + 1;
+    categorySkuCounters.set(categoryName, skuNumber);
+    const sku = `${skuPrefixes[categoryName]}-${String(skuNumber).padStart(3, "0")}`;
     const product = await prisma.product.upsert({
       where: { slug },
       update: {
-        name, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
+        name, sku, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
         price: price.toFixed(2), compareAtPrice: compareAtPrice?.toFixed(2) ?? null, stock,
         isFeatured, isOffer, isNew, isActive: true, categoryId,
       },
       create: {
-        name, slug, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
+        name, slug, sku, description: `${name}, seleccionado para comercios, eventos y emprendimientos.`,
         price: price.toFixed(2), compareAtPrice: compareAtPrice?.toFixed(2) ?? null, stock,
         isFeatured, isOffer, isNew, isActive: true, categoryId,
       },

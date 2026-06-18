@@ -30,6 +30,8 @@ import AdminCategoryFormPage from "../pages/AdminCategoryFormPage";
 import AdminOrdersPage from "../pages/AdminOrdersPage";
 import AdminOrderDetailPage from "../pages/AdminOrderDetailPage";
 import AdminStockRequestsPage from "../pages/AdminStockRequestsPage";
+import CheckoutPaymentPage from "../pages/CheckoutPaymentPage";
+import CheckoutPaymentResultPage from "../pages/CheckoutPaymentResultPage";
 
 const RootLayout = () => (
   <AppLayout>
@@ -59,6 +61,10 @@ export const router = createBrowserRouter([
       { path: "carrito", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
       { path: "checkout/confirmacion", element: <CheckoutConfirmationPage /> },
+      { path: "checkout/payment/:orderId", element: <CheckoutPaymentPage /> },
+      { path: "checkout/success", element: <CheckoutPaymentResultPage kind="success" /> },
+      { path: "checkout/pending", element: <CheckoutPaymentResultPage kind="pending" /> },
+      { path: "checkout/failure", element: <CheckoutPaymentResultPage kind="failure" /> },
       { path: "pedido/:trackingCode", element: <OrderTrackingPage /> },
       { path: "seguimiento", element: <TrackingSearchPage /> },
       { path: "acceso-denegado", element: <AccessDeniedPage /> },

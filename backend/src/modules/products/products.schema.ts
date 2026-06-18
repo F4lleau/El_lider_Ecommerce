@@ -8,6 +8,15 @@ export const productSlugParamsSchema = z.object({
   slug: z.string().trim().min(1, "Slug requerido"),
 });
 
+export const adminProductsQuerySchema = z.object({
+  q: z.string().trim().max(160).optional(),
+});
+
+const optionalSkuSchema = z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? null : value,
+  z.string().trim().min(1).max(80).nullable().optional(),
+);
+
 const productImageSchema = z.object({
   url: z.string().url("La imagen debe tener una URL valida"),
   alt: z.string().trim().max(200).nullable().optional(),
@@ -16,6 +25,7 @@ const productImageSchema = z.object({
 
 const productFields = {
   name: z.string().trim().min(2, "Nombre requerido").max(160),
+  sku: optionalSkuSchema,
   slug: z.string().trim().min(1).max(180).optional(),
   description: z.string().trim().max(3000).nullable().optional(),
   price: z.coerce.number().positive("El precio debe ser positivo"),
@@ -55,3 +65,4 @@ export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type UpdateStockInput = z.infer<typeof updateStockSchema>;
 export type UpdatePriceInput = z.infer<typeof updatePriceSchema>;
+export type AdminProductsQuery = z.infer<typeof adminProductsQuerySchema>;

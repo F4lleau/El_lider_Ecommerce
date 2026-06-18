@@ -11,6 +11,11 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default("7d"),
   DEFAULT_SHIPPING_COST: z.coerce.number().min(0).default(3000),
   PICKUP_ADDRESS: z.string().default("Av. Belgrano 103"),
+  FRONTEND_URL: z.string().url().default("http://localhost:5173"),
+  BACKEND_URL: z.string().url().default("http://localhost:3000"),
+  MERCADOPAGO_ACCESS_TOKEN: z.string().default(""),
+  MERCADOPAGO_PUBLIC_KEY: z.string().default(""),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().default(""),
 });
 
 export const env = envSchema.parse(process.env);

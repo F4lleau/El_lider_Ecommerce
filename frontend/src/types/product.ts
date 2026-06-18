@@ -14,6 +14,7 @@ export type ProductCategorySummary = {
 
 export type Product = {
   id: number;
+  sku: string | null;
   name: string;
   slug: string;
   description: string | null;

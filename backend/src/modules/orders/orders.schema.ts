@@ -1,4 +1,4 @@
-import { DeliveryMethod, OrderStatus } from "@prisma/client";
+import { DeliveryMethod, OrderStatus, PaymentMethod } from "@prisma/client";
 import { z } from "zod";
 import { cartItemsSchema } from "../cart/cart.schema.js";
 
@@ -26,6 +26,7 @@ const shippingAddressSchema = z.object({
 
 export const checkoutSchema = z.object({
   deliveryMethod: z.nativeEnum(DeliveryMethod),
+  paymentMethod: z.nativeEnum(PaymentMethod).default(PaymentMethod.MERCADOPAGO),
   customer: customerSchema.optional(),
   address: shippingAddressSchema.optional(),
   items: cartItemsSchema.shape.items.optional(),

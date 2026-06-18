@@ -140,6 +140,8 @@ paths:
     get:
       summary: Listar todos los productos para admin
       security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: q, description: Buscar por nombre o SKU, schema: { type: string } }
       responses:
         "200": { description: Lista completa }
         "401": { description: Token requerido }
@@ -158,7 +160,7 @@ paths:
         "401": { description: Token requerido }
         "403": { description: Rol admin requerido }
         "404": { description: Categoria no encontrada }
-        "409": { description: Slug duplicado }
+        "409": { description: Slug o SKU duplicado }
   /admin/products/{id}:
     get:
       summary: Obtener producto para admin
@@ -185,7 +187,7 @@ paths:
         "401": { description: Token requerido }
         "403": { description: Rol admin requerido }
         "404": { description: Producto o categoria no encontrado }
-        "409": { description: Slug duplicado }
+        "409": { description: Slug o SKU duplicado }
     delete:
       summary: Desactivar producto
       security: [{ bearerAuth: [] }]
@@ -442,6 +444,7 @@ paths:
   /checkout/validate:
     post:
       summary: Validar checkout y calcular totales
+      description: Recalcula subtotal, envio y total en backend. PICKUP usa shippingCost 0; SHIPPING usa DEFAULT_SHIPPING_COST como fallback documentado.
       requestBody:
         required: true
         content:
@@ -455,7 +458,7 @@ paths:
   /checkout:
     post:
       summary: Crear orden invitado o autenticado
-      description: Crea una orden PENDING_PAYMENT con pago PENDING sin descontar stock.
+      description: Crea una orden con totales calculados en backend. MERCADOPAGO nace PENDING_PAYMENT/PENDING y no descuenta stock; CASH nace CONFIRMED/PENDING y descuenta stock al crear.
       requestBody:
         required: true
         content:
@@ -474,6 +477,63 @@ paths:
       responses:
         "200": { description: Estado, productos y totales }
         "404": { description: Pedido no encontrado }
+  /orders/{orderId}/payment:
+    get:
+      summary: Consultar estado de pago de una orden
+      description: Usuario autenticado solo accede a sus ordenes. Invitado debe enviar trackingCode como query param.
+      parameters:
+        - { in: path, name: orderId, required: true, schema: { type: integer } }
+        - { in: query, name: trackingCode, required: false, schema: { type: string } }
+      responses:
+        "200": { description: Estado de pago de la orden }
+        "401": { description: Credenciales o tracking requeridos }
+        "403": { description: Orden ajena }
+        "404": { description: Orden no encontrada }
+  /payments/mercadopago/preference:
+    post:
+      summary: Crear preferencia de Mercado Pago
+      description: Usa siempre order.total del backend. Rechaza ordenes CASH, pagadas o ajenas. Invitado debe enviar orderId, trackingCode y email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PaymentPreferenceRequest" }
+      responses:
+        "201": { description: Preferencia creada con initPoint y sandboxInitPoint }
+        "400": { description: Datos invalidos }
+        "401": { description: Credenciales o validacion invitado requeridas }
+        "403": { description: Orden ajena }
+        "404": { description: Orden no encontrada }
+        "409": { description: Orden no pendiente, CASH o ya pagada }
+        "502": { description: Error al crear preferencia en Mercado Pago }
+  /payments/mercadopago/webhook:
+    post:
+      summary: Webhook Mercado Pago
+      description: Consulta el pago real en Mercado Pago, actualiza Payment y Order, descuenta stock solo con APPROVED e ignora duplicados. Si MERCADOPAGO_WEBHOOK_SECRET esta configurado valida x-signature y x-request-id; si esta vacio permite modo local/test.
+      parameters:
+        - { in: header, name: x-signature, required: false, schema: { type: string } }
+        - { in: header, name: x-request-id, required: false, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MercadoPagoWebhook" }
+      responses:
+        "200": { description: Evento procesado o ignorado }
+        "401": { description: Firma invalida si el secret esta configurado }
+        "404": { description: Orden asociada no encontrada }
+        "409": { description: Monto no coincide con la orden }
+  /payments/{id}/status:
+    get:
+      summary: Consultar pago por id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Pago sin rawResponse }
+        "401": { description: Token requerido }
+        "403": { description: Pago de orden ajena }
+        "404": { description: Pago no encontrado }
   /me/orders:
     get:
       summary: Listar pedidos propios
@@ -544,6 +604,11 @@ components:
       required: [deliveryMethod]
       properties:
         deliveryMethod: { type: string, enum: [PICKUP, SHIPPING] }
+        paymentMethod:
+          type: string
+          enum: [MERCADOPAGO, CASH]
+          default: MERCADOPAGO
+          description: MERCADOPAGO crea orden pendiente de pago; CASH confirma pedido y descuenta stock.
         customer:
           type: object
           properties:
@@ -576,19 +641,73 @@ components:
     Order:
       type: object
       properties:
+        id: { type: integer }
         orderNumber: { type: string }
         trackingCode: { type: string }
         status: { type: string }
         paymentStatus: { type: string }
+        paymentMethod: { type: string, enum: [MERCADOPAGO, CASH] }
         deliveryMethod: { type: string }
         subtotal: { type: string }
         shippingCost: { type: string }
         total: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+    OrderItem:
+      type: object
+      properties:
+        productId: { type: integer }
+        productName: { type: string }
+        productSlug: { type: string }
+        productSku: { type: string, nullable: true }
+        quantity: { type: integer }
+        unitPrice: { type: string }
+        totalPrice: { type: string }
+    PaymentPreferenceRequest:
+      type: object
+      required: [orderId]
+      properties:
+        orderId: { type: integer }
+        trackingCode: { type: string, description: Requerido para invitados. }
+        email: { type: string, format: email, description: Requerido para invitados. }
+    Payment:
+      type: object
+      properties:
+        id: { type: integer }
+        provider: { type: string, enum: [MERCADOPAGO] }
+        providerPaymentId: { type: string, nullable: true }
+        providerPreferenceId: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED, REFUNDED, IN_PROCESS] }
+        amount: { type: string }
+        currency: { type: string }
+        paidAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MercadoPagoWebhook:
+      type: object
+      properties:
+        type: { type: string, example: payment }
+        data:
+          type: object
+          properties:
+            id: { type: string }
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        sku: { type: string, nullable: true }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: string }
+        stock: { type: integer }
     ProductWrite:
       type: object
       required: [name, price, stock, categoryId]
       properties:
         name: { type: string }
+        sku: { type: string, nullable: true, description: Codigo interno unico; se normaliza a mayusculas. }
         slug: { type: string }
         description: { type: string, nullable: true }
         price: { type: number, minimum: 0 }

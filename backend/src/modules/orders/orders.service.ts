@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { DeliveryMethod, OrderStatus, PaymentStatus } from "@prisma/client";
+import { DeliveryMethod, OrderStatus, PaymentMethod, PaymentStatus, type Prisma } from "@prisma/client";
 import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
@@ -9,6 +9,13 @@ import type { AdminOrdersQuery, CheckoutInput } from "./orders.schema.js";
 const orderInclude = {
   user: { select: { id: true, firstName: true, lastName: true, email: true } },
   items: { include: { product: { select: { id: true, name: true, slug: true, images: { where: { isPrimary: true }, take: 1 } } } } },
+  payments: {
+    select: {
+      id: true, provider: true, providerPaymentId: true, providerPreferenceId: true,
+      status: true, amount: true, currency: true, paidAt: true, createdAt: true, updatedAt: true,
+    },
+    orderBy: { createdAt: "desc" as const },
+  },
 };
 
 const code = (prefix: string) => `${prefix}-${new Date().getFullYear()}-${randomBytes(4).toString("hex").toUpperCase()}`;
@@ -40,15 +47,28 @@ const calculate = async (userId: number | undefined, payload: CheckoutInput) => 
   return {
     customer,
     deliveryMethod: payload.deliveryMethod,
+    paymentMethod: payload.paymentMethod,
     items: cart.items,
     summary: { subtotal, shippingCost, total: Number((subtotal + shippingCost).toFixed(2)) },
     ...(payload.deliveryMethod === DeliveryMethod.PICKUP ? { pickupAddress: env.PICKUP_ADDRESS } : {}),
   };
 };
 
+const decreaseStock = async (tx: Prisma.TransactionClient, items: Array<{ productId: number; quantity: number }>) => {
+  for (const item of items) {
+    const updated = await tx.product.updateMany({
+      where: { id: item.productId, isActive: true, stock: { gte: item.quantity } },
+      data: { stock: { decrement: item.quantity } },
+    });
+    if (updated.count !== 1) throw new ApiError(409, `Stock insuficiente para productId ${item.productId}`);
+  }
+};
+
 const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
   const validated = await calculate(userId, payload);
   const created = await prisma.$transaction(async (tx) => {
+    const isCash = payload.paymentMethod === PaymentMethod.CASH;
+    if (isCash) await decreaseStock(tx, validated.items);
     const order = await tx.order.create({
       data: {
         orderNumber: code("ORD"),
@@ -57,8 +77,10 @@ const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
         guestName: userId ? null : validated.customer.name,
         guestEmail: userId ? null : validated.customer.email,
         guestPhone: userId ? null : validated.customer.phone,
-        status: OrderStatus.PENDING_PAYMENT,
+        status: isCash ? OrderStatus.CONFIRMED : OrderStatus.PENDING_PAYMENT,
         paymentStatus: PaymentStatus.PENDING,
+        paymentMethod: payload.paymentMethod,
+        stockProcessedAt: isCash ? new Date() : null,
         deliveryMethod: payload.deliveryMethod,
         subtotal: validated.summary.subtotal.toFixed(2),
         shippingCost: validated.summary.shippingCost.toFixed(2),
@@ -82,6 +104,7 @@ const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
             productId: item.productId,
             productName: item.product.name,
             productSlug: item.product.slug,
+            productSku: item.product.sku,
             quantity: item.quantity,
             unitPrice: Number(item.product.price).toFixed(2),
             totalPrice: item.subtotal.toFixed(2),
@@ -104,7 +127,7 @@ const track = async (trackingCode: string) => {
   if (!order) throw new ApiError(404, "Pedido no encontrado");
   return {
     orderNumber: order.orderNumber, trackingCode: order.trackingCode, status: order.status,
-    paymentStatus: order.paymentStatus, deliveryMethod: order.deliveryMethod, items: order.items,
+    paymentMethod: order.paymentMethod, paymentStatus: order.paymentStatus, deliveryMethod: order.deliveryMethod, items: order.items,
     subtotal: order.subtotal, shippingCost: order.shippingCost, total: order.total, createdAt: order.createdAt,
     shipping: order.deliveryMethod === DeliveryMethod.SHIPPING ? { city: order.shippingCity, province: order.shippingProvince } : null,
     pickupAddress: order.deliveryMethod === DeliveryMethod.PICKUP ? env.PICKUP_ADDRESS : null,
@@ -142,7 +165,15 @@ const updateStatus = async (id: number, status: OrderStatus) => {
   if (status !== current.status && !transitions[current.status]?.includes(status)) {
     throw new ApiError(409, `No se puede cambiar la orden de ${current.status} a ${status}`);
   }
-  return prisma.order.update({ where: { id }, data: { status }, include: orderInclude });
+  return prisma.$transaction(async (tx) => {
+    if (status === OrderStatus.CANCELLED && current.paymentMethod === PaymentMethod.CASH && current.stockProcessedAt && !current.stockRestoredAt) {
+      for (const item of current.items) {
+        await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+      }
+      return tx.order.update({ where: { id }, data: { status, stockRestoredAt: new Date() }, include: orderInclude });
+    }
+    return tx.order.update({ where: { id }, data: { status }, include: orderInclude });
+  });
 };
 
 export const ordersService = { calculate, checkout, track, listByUser, getById, listAdmin, getAdminById, updateStatus };

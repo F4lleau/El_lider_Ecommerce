@@ -15,7 +15,7 @@ export type AdminOrder = Order & {
 export type AdminStockRequest = StockRequest & { user?: { id: number; firstName: string; lastName: string; email: string } | null };
 
 export type ProductWrite = {
-  name: string; slug?: string; description?: string | null; price: number; compareAtPrice?: number | null;
+  name: string; sku?: string | null; slug?: string; description?: string | null; price: number; compareAtPrice?: number | null;
   stock: number; categoryId: number; isFeatured?: boolean; isOffer?: boolean; isNew?: boolean; isActive?: boolean;
   images?: Array<{ url: string; alt?: string | null; isPrimary?: boolean }>;
 };
