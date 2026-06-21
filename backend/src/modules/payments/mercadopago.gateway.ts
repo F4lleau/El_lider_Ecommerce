@@ -40,11 +40,19 @@ const requireCredentials = () => {
   if (!env.MERCADOPAGO_ACCESS_TOKEN) throw new ApiError(503, "Mercado Pago no esta configurado");
 };
 
+const publicBackendUrl = () => {
+  if (env.BACKEND_PUBLIC_URL) return env.BACKEND_PUBLIC_URL.replace(/\/$/, "");
+  if (env.NODE_ENV !== "production" && /localhost|127\.0\.0\.1/.test(env.BACKEND_URL)) return null;
+  return env.BACKEND_URL.replace(/\/$/, "");
+};
+
 const realGateway: MercadoPagoGateway = {
   async createPreference(input) {
     requireCredentials();
-    const response = await preferenceClient.create({
-      body: {
+    const notificationBaseUrl = publicBackendUrl();
+    try {
+      const response = await preferenceClient.create({
+        body: {
         external_reference: String(input.orderId),
         items: input.items.map((item) => ({
           id: item.id,
@@ -54,7 +62,7 @@ const realGateway: MercadoPagoGateway = {
           currency_id: "ARS",
         })),
         payer: { email: input.payerEmail },
-        notification_url: `${env.BACKEND_URL}/api/payments/mercadopago/webhook`,
+        ...(notificationBaseUrl ? { notification_url: `${notificationBaseUrl}/api/payments/mercadopago/webhook` } : {}),
         back_urls: {
           success: `${env.FRONTEND_URL}/checkout/success?orderId=${input.orderId}&trackingCode=${encodeURIComponent(input.trackingCode)}&email=${encodeURIComponent(input.payerEmail)}`,
           pending: `${env.FRONTEND_URL}/checkout/pending?orderId=${input.orderId}&trackingCode=${encodeURIComponent(input.trackingCode)}&email=${encodeURIComponent(input.payerEmail)}`,
@@ -63,14 +71,25 @@ const realGateway: MercadoPagoGateway = {
         auto_return: "approved",
         metadata: { order_number: input.orderNumber, tracking_code: input.trackingCode },
       },
-    });
-    if (!response.id) throw new ApiError(502, "Mercado Pago no devolvio una preferencia valida");
-    return {
-      id: response.id,
-      initPoint: response.init_point ?? null,
-      sandboxInitPoint: response.sandbox_init_point ?? null,
-      raw: response,
-    };
+      });
+      if (!response.id) throw new ApiError(502, "Mercado Pago no devolvio una preferencia valida");
+      return {
+        id: response.id,
+        initPoint: response.init_point ?? null,
+        sandboxInitPoint: response.sandbox_init_point ?? null,
+        raw: response,
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error("Mercado Pago preference error", {
+        message: error instanceof Error ? error.message : "unknown",
+        hasAccessToken: Boolean(env.MERCADOPAGO_ACCESS_TOKEN),
+        testToken: env.MERCADOPAGO_ACCESS_TOKEN.startsWith("TEST-"),
+        frontendUrl: env.FRONTEND_URL,
+        notificationUrlEnabled: Boolean(notificationBaseUrl),
+      });
+      throw new ApiError(502, `No se pudo iniciar el pago con Mercado Pago. Revisá la configuración o intentá nuevamente.`);
+    }
   },
   async getPayment(id) {
     requireCredentials();

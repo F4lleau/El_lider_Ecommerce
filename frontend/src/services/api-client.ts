@@ -14,7 +14,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
 
-  const payload = (await response.json()) as ApiResponse<T>;
+  const payload = (await response.json()) as ApiResponse<T> & { detail?: string };
 
   if (!response.ok || !payload.ok) {
     if (response.status === 401 && !path.startsWith("/auth/")) {
@@ -22,7 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       localStorage.removeItem("auth-user");
       window.location.assign("/login");
     }
-    throw new Error(payload?.message ?? "Error inesperado en la API");
+    throw new Error(payload?.detail ? `${payload.message}: ${payload.detail}` : payload?.message ?? "Error inesperado en la API");
   }
 
   return payload.data;
