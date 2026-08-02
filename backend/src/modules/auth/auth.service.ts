@@ -5,6 +5,7 @@ import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
 import { compareHash, hashValue } from "../../utils/hash.js";
 import { signToken } from "../../utils/jwt.js";
+import { emailService } from "../email/email.service.js";
 import type { ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput, ValidateResetTokenInput } from "./auth.schema.js";
 
 const RESET_MESSAGE = "Si el email existe, te enviaremos instrucciones para recuperar tu contraseña.";
@@ -111,7 +112,12 @@ const forgotPassword = async (payload: ForgotPasswordInput) => {
   ]);
 
   const url = resetLink(token);
-  if (env.NODE_ENV !== "production") {
+  await emailService.safeSend(
+    "password-reset",
+    () => emailService.sendPasswordResetEmail({ to: user.email, resetUrl: url, expiresInMinutes: RESET_TOKEN_MINUTES }),
+    { userId: user.id, to: user.email },
+  );
+  if (env.NODE_ENV !== "production" && env.EMAIL_DEV_LOG) {
     console.info(`Password reset link for ${user.email}: ${url}`);
   }
   return publicResetResponse(url);

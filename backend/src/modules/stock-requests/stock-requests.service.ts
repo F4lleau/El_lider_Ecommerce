@@ -1,6 +1,7 @@
 import { StockRequestStatus } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
+import { emailService } from "../email/email.service.js";
 import type { CreateStockRequestInput } from "./stock-requests.schema.js";
 
 const include = {
@@ -44,9 +45,17 @@ const cancelMine = async (userId: number, id: number) => {
 };
 
 const updateStatus = async (id: number, status: StockRequestStatus) => {
-  const existing = await prisma.stockRequest.findUnique({ where: { id }, select: { id: true } });
+  const existing = await prisma.stockRequest.findUnique({ where: { id }, select: { id: true, status: true } });
   if (!existing) throw new ApiError(404, "Solicitud no encontrada");
-  return prisma.stockRequest.update({ where: { id }, data: { status, notifiedAt: status === StockRequestStatus.NOTIFIED ? new Date() : null }, include });
+  const updated = await prisma.stockRequest.update({ where: { id }, data: { status, notifiedAt: status === StockRequestStatus.NOTIFIED ? new Date() : null }, include });
+  if (existing.status !== status && (status === StockRequestStatus.CONTACTED || status === StockRequestStatus.NOTIFIED)) {
+    await emailService.safeSend(
+      "stock-request-notification",
+      () => emailService.sendStockAvailableEmail(updated),
+      { stockRequestId: updated.id, to: updated.email },
+    );
+  }
+  return updated;
 };
 
 export const stockRequestsService = { create, listMine, cancelMine, listAdmin, updateStatus };

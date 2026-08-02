@@ -17,6 +17,16 @@ const envSchema = z.object({
   MERCADOPAGO_ACCESS_TOKEN: z.string().default(""),
   MERCADOPAGO_PUBLIC_KEY: z.string().default(""),
   MERCADOPAGO_WEBHOOK_SECRET: z.string().default(""),
+  EMAIL_ENABLED: z.coerce.boolean().default(false),
+  EMAIL_PROVIDER: z.enum(["smtp"]).default("smtp"),
+  EMAIL_FROM_NAME: z.string().default("El Lider"),
+  EMAIL_FROM_ADDRESS: z.string().email().optional().or(z.literal("")).default(""),
+  SMTP_HOST: z.string().optional().or(z.literal("")).default(""),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.coerce.boolean().default(false),
+  SMTP_USER: z.string().optional().or(z.literal("")).default(""),
+  SMTP_PASS: z.string().optional().or(z.literal("")).default(""),
+  EMAIL_DEV_LOG: z.coerce.boolean().default(false),
 });
 
 export const env = envSchema.parse(process.env);

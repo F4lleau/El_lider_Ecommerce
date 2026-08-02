@@ -9,6 +9,8 @@ import { validateWebhookSignature } from "../src/modules/payments/webhook-signat
 import { prisma } from "../src/lib/prisma.js";
 import { resetMercadoPagoGatewayForTests, setMercadoPagoGatewayForTests, type ProviderPayment } from "../src/modules/payments/mercadopago.gateway.js";
 import { paymentsService } from "../src/modules/payments/payments.service.js";
+import { resetEmailSenderForTests, setEmailSenderForTests } from "../src/modules/email/email.service.js";
+import { env } from "../src/config/env.js";
 
 const marker = `payment-test-${Date.now()}`;
 let orderId = 0;
@@ -18,6 +20,8 @@ let userToken = "";
 let otherToken = "";
 let baseUrl = "";
 let closeServer: (() => Promise<void>) | undefined;
+const sentEmails: Array<{ to: string; subject: string }> = [];
+let previousEmailEnabled = false;
 
 const providerPayment = (): ProviderPayment => ({
   id: `${marker}-provider-payment`,
@@ -30,6 +34,12 @@ const providerPayment = (): ProviderPayment => ({
 });
 
 before(async () => {
+  previousEmailEnabled = env.EMAIL_ENABLED;
+  env.EMAIL_ENABLED = true;
+  setEmailSenderForTests(async (payload) => {
+    sentEmails.push({ to: payload.to, subject: payload.subject });
+    return { skipped: false, messageId: `payment-test-${sentEmails.length}` };
+  });
   const passwordHash = await hashValue("PaymentPassword123!");
   const [user, other, category] = await Promise.all([
     prisma.user.create({ data: { firstName: "Payment", lastName: "User", email: `${marker}-user@example.com`, passwordHash, role: UserRole.USER } }),
@@ -73,6 +83,8 @@ before(async () => {
 });
 
 after(async () => {
+  env.EMAIL_ENABLED = previousEmailEnabled;
+  resetEmailSenderForTests();
   resetMercadoPagoGatewayForTests();
   await prisma.order.deleteMany({ where: { orderNumber: { startsWith: marker } } });
   await prisma.product.deleteMany({ where: { slug: marker } });
@@ -125,6 +137,7 @@ describe("webhook e idempotencia", () => {
   });
 
   test("approved descuenta stock una sola vez y actualiza orden", async () => {
+    sentEmails.length = 0;
     providerStatus = "approved";
     await paymentsService.processWebhook("payment", providerPayment().id);
     await paymentsService.processWebhook("payment", providerPayment().id);
@@ -137,6 +150,7 @@ describe("webhook e idempotencia", () => {
     assert.equal(order.paymentStatus, PaymentStatus.APPROVED);
     assert.equal(product.stock, 8);
     assert.equal(payments.length, 1);
+    assert.equal(sentEmails.filter((email) => email.subject.includes("Pago aprobado")).length, 1);
   });
 
   test("respuesta publica de pago no expone rawResponse", async () => {

@@ -8,6 +8,8 @@ import { compareHash, hashValue } from "../src/utils/hash.js";
 import { signToken, verifyToken } from "../src/utils/jwt.js";
 import { requireAuth, requireRole } from "../src/middlewares/auth.middleware.js";
 import { errorMiddleware } from "../src/middlewares/error.middleware.js";
+import { resetEmailSenderForTests, setEmailSenderForTests } from "../src/modules/email/email.service.js";
+import { env } from "../src/config/env.js";
 
 const marker = `auth-test-${Date.now()}`;
 const userEmail = `${marker}-user@example.com`;
@@ -19,6 +21,8 @@ const resetPassword = "NuevaClave1!";
 
 let baseUrl = "";
 let closeServer: (() => Promise<void>) | undefined;
+const sentEmails: Array<{ to: string; subject: string; text: string }> = [];
+let previousEmailEnabled = false;
 
 const request = async (path: string, init?: RequestInit) => {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -29,6 +33,12 @@ const request = async (path: string, init?: RequestInit) => {
 };
 
 before(async () => {
+  previousEmailEnabled = env.EMAIL_ENABLED;
+  env.EMAIL_ENABLED = true;
+  setEmailSenderForTests(async (payload) => {
+    sentEmails.push(payload);
+    return { skipped: false, messageId: `test-${sentEmails.length}` };
+  });
   const server = app.listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
   const address = server.address();
@@ -38,6 +48,8 @@ before(async () => {
 });
 
 after(async () => {
+  env.EMAIL_ENABLED = previousEmailEnabled;
+  resetEmailSenderForTests();
   await prisma.user.deleteMany({ where: { email: { startsWith: marker } } });
   await prisma.$disconnect();
   await closeServer?.();
@@ -111,6 +123,7 @@ describe("password recovery", () => {
       method: "POST",
       body: JSON.stringify({ email: resetEmail }),
     });
+    const emailCountAfterExisting = sentEmails.length;
     const missing = await request("/api/auth/forgot-password", {
       method: "POST",
       body: JSON.stringify({ email: `${marker}-missing@example.com` }),
@@ -119,6 +132,8 @@ describe("password recovery", () => {
     assert.equal(existing.response.status, 200);
     assert.equal(missing.response.status, 200);
     assert.equal(existing.body.message, missing.body.message);
+    assert.equal(emailCountAfterExisting, sentEmails.length);
+    assert.ok(sentEmails.some((email) => email.to === resetEmail && email.subject.includes("Recuperacion")));
 
     const resetUrl = (existing.body.data as { resetUrl?: string }).resetUrl;
     assert.ok(resetUrl);

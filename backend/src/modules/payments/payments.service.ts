@@ -1,6 +1,7 @@
 import { OrderStatus, PaymentMethod, PaymentProvider, PaymentStatus, Prisma, UserRole } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
+import { emailService } from "../email/email.service.js";
 import { mercadoPagoGateway, type ProviderPayment } from "./mercadopago.gateway.js";
 
 const publicPaymentSelect = {
@@ -92,13 +93,14 @@ const processVerifiedPayment = async (providerPayment: ProviderPayment) => {
   if (!Number.isInteger(orderId)) throw new ApiError(400, "Referencia externa de pago invalida");
   const status = mapStatus(providerPayment.status);
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
     if (!order) throw new ApiError(404, "Orden asociada al pago no encontrada");
     if (Number(order.total) !== providerPayment.amount) throw new ApiError(409, "El monto del pago no coincide con la orden");
 
     const existing = await tx.payment.findUnique({ where: { providerPaymentId: providerPayment.id } });
-    const alreadyApproved = order.paymentStatus === PaymentStatus.APPROVED;
+    const alreadyApproved = order.paymentStatus === PaymentStatus.APPROVED || existing?.status === PaymentStatus.APPROVED;
+    const shouldSendApprovedEmail = status === PaymentStatus.APPROVED && !alreadyApproved;
     let stockError: string | null = existing?.processingError ?? null;
     let stockProcessedAt = existing?.stockProcessedAt ?? null;
 
@@ -154,8 +156,22 @@ const processVerifiedPayment = async (providerPayment: ProviderPayment) => {
         ...(status === PaymentStatus.APPROVED && { status: OrderStatus.PAID }),
       },
     });
-    return payment;
+    return { payment, shouldSendApprovedEmail, orderId: order.id };
   });
+  if (result.shouldSendApprovedEmail) {
+    const order = await prisma.order.findUnique({
+      where: { id: result.orderId },
+      include: { user: { select: { email: true } } },
+    });
+    if (order) {
+      await emailService.safeSend(
+        "payment-approved",
+        () => emailService.sendPaymentApprovedEmail(order),
+        { orderId: order.id, to: order.guestEmail ?? order.user?.email ?? null },
+      );
+    }
+  }
+  return result.payment;
 };
 
 const processWebhook = async (type: string | undefined, paymentId: string | undefined) => {

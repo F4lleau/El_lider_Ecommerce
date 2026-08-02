@@ -4,6 +4,7 @@ import { env } from "../../config/env.js";
 import { prisma } from "../../lib/prisma.js";
 import { ApiError } from "../../utils/api-error.js";
 import { cartService } from "../cart/cart.service.js";
+import { emailService } from "../email/email.service.js";
 import type { AdminOrdersQuery, CheckoutInput } from "./orders.schema.js";
 
 const orderInclude = {
@@ -119,6 +120,11 @@ const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
     }
     return order;
   });
+  await emailService.safeSend(
+    "order-confirmed",
+    () => emailService.sendOrderConfirmedEmail(created),
+    { orderId: created.id, to: created.guestEmail ?? created.user?.email ?? null },
+  );
   return created;
 };
 
@@ -165,7 +171,7 @@ const updateStatus = async (id: number, status: OrderStatus) => {
   if (status !== current.status && !transitions[current.status]?.includes(status)) {
     throw new ApiError(409, `No se puede cambiar la orden de ${current.status} a ${status}`);
   }
-  return prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     if (status === OrderStatus.CANCELLED && current.paymentMethod === PaymentMethod.CASH && current.stockProcessedAt && !current.stockRestoredAt) {
       for (const item of current.items) {
         await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
@@ -174,6 +180,21 @@ const updateStatus = async (id: number, status: OrderStatus) => {
     }
     return tx.order.update({ where: { id }, data: { status }, include: orderInclude });
   });
+  if (current.status !== updated.status && updated.status === OrderStatus.READY_FOR_PICKUP) {
+    await emailService.safeSend(
+      "order-ready-for-pickup",
+      () => emailService.sendOrderReadyForPickupEmail(updated),
+      { orderId: updated.id, to: updated.guestEmail ?? updated.user?.email ?? null },
+    );
+  }
+  if (current.status !== updated.status && updated.status === OrderStatus.SHIPPED) {
+    await emailService.safeSend(
+      "order-shipped",
+      () => emailService.sendOrderShippedEmail(updated),
+      { orderId: updated.id, to: updated.guestEmail ?? updated.user?.email ?? null },
+    );
+  }
+  return updated;
 };
 
 export const ordersService = { calculate, checkout, track, listByUser, getById, listAdmin, getAdminById, updateStatus };

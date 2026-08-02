@@ -5,6 +5,8 @@ import { app } from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 import { hashValue } from "../src/utils/hash.js";
 import { signToken } from "../src/utils/jwt.js";
+import { resetEmailSenderForTests, setEmailSenderForTests } from "../src/modules/email/email.service.js";
+import { env } from "../src/config/env.js";
 
 const marker = `checkout-test-${Date.now()}`;
 let baseUrl = "";
@@ -16,6 +18,8 @@ let productId = 0;
 let inactiveProductId = 0;
 let noStockProductId = 0;
 let userId = 0;
+const sentEmails: Array<{ to: string; subject: string }> = [];
+let previousEmailEnabled = false;
 
 const request = async (path: string, token?: string, init?: RequestInit) => {
   const response = await fetch(`${baseUrl}${path}`, { ...init, headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers } });
@@ -27,6 +31,12 @@ const address = { recipient: "Invitado Checkout", phone: "1112345678", street: "
 const guestPayload = (deliveryMethod: DeliveryMethod, paymentMethod = PaymentMethod.MERCADOPAGO) => ({ deliveryMethod, paymentMethod, customer, items: [{ productId, quantity: 2 }], ...(deliveryMethod === DeliveryMethod.SHIPPING && { address }) });
 
 before(async () => {
+  previousEmailEnabled = env.EMAIL_ENABLED;
+  env.EMAIL_ENABLED = true;
+  setEmailSenderForTests(async (payload) => {
+    sentEmails.push({ to: payload.to, subject: payload.subject });
+    return { skipped: false, messageId: `checkout-test-email-${sentEmails.length}` };
+  });
   const passwordHash = await hashValue("CheckoutPassword123!");
   const [user, other, admin, category] = await Promise.all([
     prisma.user.create({ data: { firstName: "Checkout", lastName: "User", email: `${marker}-user@example.com`, passwordHash, role: UserRole.USER } }),
@@ -52,6 +62,8 @@ before(async () => {
 });
 
 after(async () => {
+  env.EMAIL_ENABLED = previousEmailEnabled;
+  resetEmailSenderForTests();
   await prisma.order.deleteMany({ where: { OR: [{ guestEmail: { contains: marker } }, { user: { email: { startsWith: marker } } }] } });
   await prisma.cart.deleteMany({ where: { user: { email: { startsWith: marker } } } });
   await prisma.product.deleteMany({ where: { slug: { startsWith: marker } } });
@@ -91,6 +103,7 @@ describe("checkout invitado", () => {
   });
 
   test("crea orden CASH pickup y descuenta stock", async () => {
+    sentEmails.length = 0;
     const beforeStock = (await prisma.product.findUniqueOrThrow({ where: { id: productId } })).stock;
     const result = await request("/api/checkout", undefined, { method: "POST", body: JSON.stringify(guestPayload(DeliveryMethod.PICKUP, PaymentMethod.CASH)) });
     assert.equal(result.response.status, 201);
@@ -100,6 +113,7 @@ describe("checkout invitado", () => {
     assert.equal(order.paymentStatus, PaymentStatus.PENDING);
     assert.equal(Number(order.shippingCost), 0);
     assert.equal((await prisma.product.findUniqueOrThrow({ where: { id: productId } })).stock, beforeStock - 2);
+    assert.equal(sentEmails.filter((email) => email.subject.includes("Pedido confirmado")).length, 1);
   });
 
   test("crea orden CASH shipping con costo de envio", async () => {
