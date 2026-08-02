@@ -1,5 +1,15 @@
 import { apiClient } from "./api-client";
-import type { AuthResponse, LoginPayload, RegisterPayload } from "../types/auth";
+import type {
+  AuthResponse,
+  ForgotPasswordPayload,
+  ForgotPasswordResponse,
+  LoginPayload,
+  RegisterPayload,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
+  ValidateResetTokenPayload,
+  ValidateResetTokenResponse,
+} from "../types/auth";
 import type { User } from "../types/user";
 
 export const authService = {
@@ -12,4 +22,8 @@ export const authService = {
   },
 
   me: () => apiClient.get<User>("/auth/me"),
+
+  forgotPassword: (payload: ForgotPasswordPayload) => apiClient.post<ForgotPasswordResponse>("/auth/forgot-password", payload),
+  validateResetToken: (payload: ValidateResetTokenPayload) => apiClient.post<ValidateResetTokenResponse>("/auth/validate-reset-token", payload),
+  resetPassword: (payload: ResetPasswordPayload) => apiClient.post<ResetPasswordResponse>("/auth/reset-password", payload),
 };

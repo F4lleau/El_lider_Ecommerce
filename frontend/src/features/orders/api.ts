@@ -5,6 +5,6 @@ export const ordersApi = {
   validate: (payload: CheckoutPayload) => apiClient.post<CheckoutSummary>("/checkout/validate", payload),
   checkout: (payload: CheckoutPayload) => apiClient.post<Order>("/checkout", payload),
   track: (trackingCode: string) => apiClient.get<Order>(`/orders/track/${encodeURIComponent(trackingCode)}`),
-  listMine: () => apiClient.get<Order[]>("/me/orders"),
-  getMine: (id: number) => apiClient.get<Order>(`/me/orders/${id}`),
+  listMine: () => apiClient.get<Order[]>("/users/me/orders"),
+  getMine: (id: number) => apiClient.get<Order>(`/users/me/orders/${id}`),
 };

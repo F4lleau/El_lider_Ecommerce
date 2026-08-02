@@ -47,6 +47,56 @@ paths:
         "200": { description: Login exitoso }
         "400": { description: Datos inválidos }
         "401": { description: Credenciales inválidas }
+        "423": { description: Cuenta bloqueada temporalmente }
+  /auth/forgot-password:
+    post:
+      summary: Solicitar recuperacion de contrasena
+      description: Responde siempre con un mensaje generico para no revelar si el email existe. En development/test puede devolver resetUrl para pruebas locales.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200": { description: Solicitud recibida con mensaje generico }
+        "400": { description: Email invalido }
+  /auth/validate-reset-token:
+    post:
+      summary: Validar token de recuperacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200": { description: Token valido }
+        "400": { description: Token invalido, usado o expirado }
+  /auth/reset-password:
+    post:
+      summary: Resetear contrasena
+      description: Valida token, confirmacion y politica de contrasena. Al finalizar limpia intentos fallidos y desbloquea la cuenta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password, confirmPassword]
+              properties:
+                token: { type: string }
+                password: { type: string, example: NuevaClave1! }
+                confirmPassword: { type: string, example: NuevaClave1! }
+      responses:
+        "200": { description: Contrasena actualizada }
+        "400": { description: Token invalido, expirado, usado o contrasena insegura }
   /auth/me:
     get:
       summary: Sesión autenticada actual
@@ -61,6 +111,114 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         "200": { description: Perfil }
+        "401": { description: Token requerido }
+        "404": { description: Usuario no encontrado }
+    patch:
+      summary: Actualizar perfil del usuario autenticado
+      description: Actualiza datos basicos. El email queda solo lectura.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+      responses:
+        "200": { description: Perfil actualizado }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "404": { description: Usuario no encontrado }
+  /users/me/addresses:
+    get:
+      summary: Listar direcciones propias
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Direcciones del usuario }
+        "401": { description: Token requerido }
+    post:
+      summary: Crear direccion propia
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserAddressWrite" }
+      responses:
+        "201": { description: Direccion creada }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+  /users/me/addresses/{id}:
+    patch:
+      summary: Editar direccion propia
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserAddressWrite" }
+      responses:
+        "200": { description: Direccion actualizada }
+        "400": { description: Datos invalidos }
+        "401": { description: Token requerido }
+        "404": { description: Direccion no encontrada o ajena }
+    delete:
+      summary: Eliminar direccion propia
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Direccion eliminada }
+        "401": { description: Token requerido }
+        "404": { description: Direccion no encontrada o ajena }
+  /users/me/addresses/{id}/default:
+    patch:
+      summary: Marcar direccion propia como principal
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Direccion principal actualizada }
+        "401": { description: Token requerido }
+        "404": { description: Direccion no encontrada o ajena }
+  /users/me/orders:
+    get:
+      summary: Listar pedidos propios
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Pedidos propios }
+        "401": { description: Token requerido }
+  /users/me/orders/{id}:
+    get:
+      summary: Detalle de pedido propio
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Pedido propio }
+        "401": { description: Token requerido }
+        "404": { description: Pedido no encontrado o ajeno }
+  /users/me/stock-requests:
+    get:
+      summary: Listar solicitudes de stock propias
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Solicitudes propias }
+        "401": { description: Token requerido }
+  /users/me/stock-requests/{id}/cancel:
+    patch:
+      summary: Cancelar solicitud de stock propia pendiente
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: Solicitud cancelada }
+        "401": { description: Token requerido }
+        "404": { description: Solicitud no encontrada o ajena }
+        "409": { description: La solicitud no esta pendiente }
   /categories:
     get:
       summary: Listar categorías
@@ -684,6 +842,21 @@ components:
         paidAt: { type: string, format: date-time, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
+    UserAddressWrite:
+      type: object
+      required: [recipient, street, number, city, postalCode]
+      properties:
+        label: { type: string, nullable: true }
+        recipient: { type: string }
+        phone: { type: string, nullable: true }
+        street: { type: string }
+        number: { type: string }
+        apartment: { type: string, nullable: true }
+        city: { type: string }
+        state: { type: string, nullable: true }
+        postalCode: { type: string }
+        country: { type: string, default: AR }
+        isDefault: { type: boolean }
     MercadoPagoWebhook:
       type: object
       properties:

@@ -1,4 +1,5 @@
 import type { DeliveryMethod, OrderStatus, PaymentMethod, PaymentStatus } from "@/types/order";
+import type { StockRequestStatus } from "@/types/stock-request";
 
 type KnownOrderStatus = OrderStatus | "PENDING_CONFIRMATION";
 
@@ -39,6 +40,13 @@ const deliveryMethodLabels: Record<DeliveryMethod, string> = {
   SHIPPING: "Envío a domicilio",
 };
 
+const stockRequestStatusLabels: Record<StockRequestStatus, string> = {
+  PENDING: "Pendiente",
+  CONTACTED: "Contactado",
+  NOTIFIED: "Notificado",
+  CANCELLED: "Cancelado",
+};
+
 export const orderStatusLabel = (status: KnownOrderStatus, deliveryMethod?: DeliveryMethod) =>
   deliveryMethod === "PICKUP" ? pickupOrderStatusLabels[status] ?? orderStatusLabels[status] : orderStatusLabels[status];
 
@@ -48,6 +56,8 @@ export const paymentMethodLabel = (method: PaymentMethod) => paymentMethodLabels
 
 export const deliveryMethodLabel = (method: DeliveryMethod) => deliveryMethodLabels[method];
 
+export const stockRequestStatusLabel = (status: StockRequestStatus) => stockRequestStatusLabels[status];
+
 export const orderStatusOptionsForDelivery = (deliveryMethod: DeliveryMethod, currentStatus?: OrderStatus): OrderStatus[] => {
   if (currentStatus === "PENDING_PAYMENT") return ["PENDING_PAYMENT", "CANCELLED"];
   if (currentStatus === "PAID") return ["PAID", "CONFIRMED", "CANCELLED", "REFUNDED"];
@@ -56,4 +66,3 @@ export const orderStatusOptionsForDelivery = (deliveryMethod: DeliveryMethod, cu
     : ["CONFIRMED", "PREPARING", "SHIPPED", "DELIVERED", "CANCELLED"];
   return currentStatus && !options.includes(currentStatus) ? [currentStatus, ...options] : options;
 };
-

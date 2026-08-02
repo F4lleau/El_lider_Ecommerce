@@ -4,7 +4,7 @@ import express from "express";
 import { UserRole } from "@prisma/client";
 import { app } from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
-import { hashValue } from "../src/utils/hash.js";
+import { compareHash, hashValue } from "../src/utils/hash.js";
 import { signToken, verifyToken } from "../src/utils/jwt.js";
 import { requireAuth, requireRole } from "../src/middlewares/auth.middleware.js";
 import { errorMiddleware } from "../src/middlewares/error.middleware.js";
@@ -12,7 +12,10 @@ import { errorMiddleware } from "../src/middlewares/error.middleware.js";
 const marker = `auth-test-${Date.now()}`;
 const userEmail = `${marker}-user@example.com`;
 const adminEmail = `${marker}-admin@example.com`;
+const resetEmail = `${marker}-reset@example.com`;
+const lockEmail = `${marker}-lock@example.com`;
 const password = "TestPassword123!";
+const resetPassword = "NuevaClave1!";
 
 let baseUrl = "";
 let closeServer: (() => Promise<void>) | undefined;
@@ -95,6 +98,124 @@ describe("auth HTTP", () => {
     });
     assert.equal(authenticated.response.status, 200);
     assert.equal((authenticated.body.data as { email: string }).email, userEmail);
+  });
+});
+
+describe("password recovery", () => {
+  test("forgot responde generico para email existente e inexistente y guarda token hasheado", async () => {
+    await prisma.user.create({
+      data: { firstName: "Reset", lastName: "User", email: resetEmail, passwordHash: await hashValue(password), role: UserRole.USER },
+    });
+
+    const existing = await request("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: resetEmail }),
+    });
+    const missing = await request("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: `${marker}-missing@example.com` }),
+    });
+
+    assert.equal(existing.response.status, 200);
+    assert.equal(missing.response.status, 200);
+    assert.equal(existing.body.message, missing.body.message);
+
+    const resetUrl = (existing.body.data as { resetUrl?: string }).resetUrl;
+    assert.ok(resetUrl);
+    const token = new URL(resetUrl).searchParams.get("token");
+    assert.ok(token);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: resetEmail } });
+    const saved = await prisma.passwordResetToken.findFirstOrThrow({ where: { userId: user.id } });
+    assert.notEqual(saved.tokenHash, token);
+    assert.equal(saved.tokenHash.length, 64);
+  });
+
+  test("validate token acepta valido y rechaza invalido o expirado", async () => {
+    const forgot = await request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: resetEmail }) });
+    const token = new URL((forgot.body.data as { resetUrl: string }).resetUrl).searchParams.get("token")!;
+    const valid = await request("/api/auth/validate-reset-token", { method: "POST", body: JSON.stringify({ token }) });
+    assert.equal(valid.response.status, 200);
+
+    const invalid = await request("/api/auth/validate-reset-token", { method: "POST", body: JSON.stringify({ token: "x".repeat(64) }) });
+    assert.equal(invalid.response.status, 400);
+
+    await prisma.passwordResetToken.updateMany({ where: { user: { email: resetEmail }, usedAt: null }, data: { expiresAt: new Date(Date.now() - 1000) } });
+    const expired = await request("/api/auth/validate-reset-token", { method: "POST", body: JSON.stringify({ token }) });
+    assert.equal(expired.response.status, 400);
+  });
+
+  test("reset password valido actualiza hash, marca usado y permite login", async () => {
+    const forgot = await request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: resetEmail }) });
+    const token = new URL((forgot.body.data as { resetUrl: string }).resetUrl).searchParams.get("token")!;
+    const result = await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: resetPassword, confirmPassword: resetPassword }),
+    });
+    assert.equal(result.response.status, 200);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: resetEmail } });
+    assert.equal(await compareHash(resetPassword, user.passwordHash), true);
+    const used = await prisma.passwordResetToken.findFirstOrThrow({ where: { userId: user.id }, orderBy: { createdAt: "desc" } });
+    assert.ok(used.usedAt);
+
+    const reused = await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: "OtraClave1!", confirmPassword: "OtraClave1!" }),
+    });
+    assert.equal(reused.response.status, 400);
+
+    const login = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: resetEmail, password: resetPassword }) });
+    assert.equal(login.response.status, 200);
+  });
+
+  test("reset rechaza password insegura y confirmacion distinta", async () => {
+    const forgot = await request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: resetEmail }) });
+    const token = new URL((forgot.body.data as { resetUrl: string }).resetUrl).searchParams.get("token")!;
+    for (const candidate of ["Ab1!", "sinmayuscula1!", "SINMINUSCULA1!", "SinEspecial1"]) {
+      const result = await request("/api/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, password: candidate, confirmPassword: candidate }),
+      });
+      assert.equal(result.response.status, 400);
+    }
+    const mismatch = await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: "NuevaClave1!", confirmPassword: "Distinta1!" }),
+    });
+    assert.equal(mismatch.response.status, 400);
+  });
+});
+
+describe("login lockout", () => {
+  test("bloquea tras intentos fallidos, informa espera, expira y reset desbloquea", async () => {
+    await prisma.user.create({
+      data: { firstName: "Lock", lastName: "User", email: lockEmail, passwordHash: await hashValue(password), role: UserRole.USER },
+    });
+    for (let index = 0; index < 4; index += 1) {
+      const failed = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: lockEmail, password: "incorrecta" }) });
+      assert.equal(failed.response.status, 401);
+    }
+    const lockedAttempt = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: lockEmail, password: "incorrecta" }) });
+    assert.equal(lockedAttempt.response.status, 423);
+    assert.match(String(lockedAttempt.body.message), /30 minutos/);
+
+    const whileLocked = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: lockEmail, password }) });
+    assert.equal(whileLocked.response.status, 423);
+
+    await prisma.user.update({ where: { email: lockEmail }, data: { lockedUntil: new Date(Date.now() - 1000) } });
+    const afterWait = await request("/api/auth/login", { method: "POST", body: JSON.stringify({ email: lockEmail, password }) });
+    assert.equal(afterWait.response.status, 200);
+
+    await prisma.user.update({ where: { email: lockEmail }, data: { failedLoginAttempts: 5, lockedUntil: new Date(Date.now() + 30 * 60_000), lastFailedLoginAt: new Date() } });
+    const forgot = await request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: lockEmail }) });
+    const token = new URL((forgot.body.data as { resetUrl: string }).resetUrl).searchParams.get("token")!;
+    const reset = await request("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: "ResetLock1!", confirmPassword: "ResetLock1!" }),
+    });
+    assert.equal(reset.response.status, 200);
+    const unlocked = await prisma.user.findUniqueOrThrow({ where: { email: lockEmail } });
+    assert.equal(unlocked.failedLoginAttempts, 0);
+    assert.equal(unlocked.lockedUntil, null);
   });
 });
 

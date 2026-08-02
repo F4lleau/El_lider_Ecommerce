@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
+import ForgotPasswordPage from "../pages/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPasswordPage";
 import ProductsPage from "../pages/ProductsPage";
 import OffersPage from "../pages/OffersPage";
 import AboutPage from "../pages/AboutPage";
@@ -13,7 +15,11 @@ import NotFoundPage from "../pages/NotFoundPage";
 import AppLayout from "./layout";
 import { ProtectedRoute } from "../components/auth/ProtectedRoute";
 import { AdminRoute } from "../components/auth/AdminRoute";
+import AccountLayout from "../components/account/AccountLayout";
 import AccountPage from "../pages/AccountPage";
+import AccountProfilePage from "../pages/AccountProfilePage";
+import AccountAddressesPage from "../pages/AccountAddressesPage";
+import AccountStockRequestsPage from "../pages/AccountStockRequestsPage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
 import AccessDeniedPage from "../pages/AccessDeniedPage";
 import CheckoutPage from "../pages/CheckoutPage";
@@ -58,6 +64,8 @@ export const router = createBrowserRouter([
       { path: "nosotros/contacto", element: <AboutContactPage /> },
       { path: "login", element: <LoginPage /> },
       { path: "registro", element: <RegisterPage /> },
+      { path: "recuperar-clave", element: <ForgotPasswordPage /> },
+      { path: "resetear-clave", element: <ResetPasswordPage /> },
       { path: "carrito", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
       { path: "checkout/confirmacion", element: <CheckoutConfirmationPage /> },
@@ -71,9 +79,18 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
-          { path: "mi-cuenta", element: <AccountPage /> },
-          { path: "mi-cuenta/pedidos", element: <MyOrdersPage /> },
-          { path: "mi-cuenta/pedidos/:id", element: <MyOrderDetailPage /> },
+          {
+            path: "mi-cuenta",
+            element: <AccountLayout />,
+            children: [
+              { index: true, element: <AccountPage /> },
+              { path: "perfil", element: <AccountProfilePage /> },
+              { path: "direcciones", element: <AccountAddressesPage /> },
+              { path: "pedidos", element: <MyOrdersPage /> },
+              { path: "pedidos/:id", element: <MyOrderDetailPage /> },
+              { path: "solicitudes-stock", element: <AccountStockRequestsPage /> },
+            ],
+          },
         ],
       },
       { path: "*", element: <NotFoundPage /> },

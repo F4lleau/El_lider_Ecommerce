@@ -6,6 +6,7 @@ import { stockRequestsController } from "./stock-requests.controller.js";
 const stockRequestsRouter = Router();
 stockRequestsRouter.post("/products/:productId/stock-requests", optionalAuth, stockRequestsController.create);
 stockRequestsRouter.get("/me/stock-requests", requireAuth, stockRequestsController.listMine);
+stockRequestsRouter.patch("/me/stock-requests/:id/cancel", requireAuth, stockRequestsController.cancelMine);
 stockRequestsRouter.get("/admin/stock-requests", requireAuth, requireRole(UserRole.ADMIN), stockRequestsController.listAdmin);
 stockRequestsRouter.patch("/admin/stock-requests/:id/status", requireAuth, requireRole(UserRole.ADMIN), stockRequestsController.updateStatus);
 

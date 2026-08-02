@@ -31,6 +31,7 @@ export type CheckoutSummary = {
 export type OrderItem = {
   id: number; productId: number; productName: string; productSlug: string; productSku: string | null;
   quantity: number; unitPrice: string; totalPrice: string;
+  product?: { images?: Array<{ url: string; alt?: string | null }> };
 };
 
 export type Order = {
@@ -38,4 +39,14 @@ export type Order = {
   status: OrderStatus; paymentStatus: PaymentStatus; paymentMethod: PaymentMethod; deliveryMethod: DeliveryMethod;
   guestEmail?: string | null;
   subtotal: string; shippingCost: string; total: string; items: OrderItem[]; createdAt: string;
+  shippingRecipient?: string | null;
+  shippingPhone?: string | null;
+  shippingStreet?: string | null;
+  shippingNumber?: string | null;
+  shippingFloor?: string | null;
+  shippingApartment?: string | null;
+  shippingCity?: string | null;
+  shippingProvince?: string | null;
+  shippingPostalCode?: string | null;
+  shippingReferences?: string | null;
 };

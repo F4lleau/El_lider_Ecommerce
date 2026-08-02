@@ -34,10 +34,19 @@ const create = async (productId: number, userId: number | undefined, payload: Cr
 const listMine = (userId: number) => prisma.stockRequest.findMany({ where: { userId }, include, orderBy: { createdAt: "desc" } });
 const listAdmin = () => prisma.stockRequest.findMany({ include: { ...include, user: { select: { id: true, firstName: true, lastName: true, email: true } } }, orderBy: [{ status: "asc" }, { createdAt: "desc" }] });
 
+const cancelMine = async (userId: number, id: number) => {
+  const existing = await prisma.stockRequest.findFirst({ where: { id, userId } });
+  if (!existing) throw new ApiError(404, "Solicitud no encontrada");
+  if (existing.status !== StockRequestStatus.PENDING) {
+    throw new ApiError(409, "Solo se pueden cancelar solicitudes pendientes");
+  }
+  return prisma.stockRequest.update({ where: { id }, data: { status: StockRequestStatus.CANCELLED }, include });
+};
+
 const updateStatus = async (id: number, status: StockRequestStatus) => {
   const existing = await prisma.stockRequest.findUnique({ where: { id }, select: { id: true } });
   if (!existing) throw new ApiError(404, "Solicitud no encontrada");
   return prisma.stockRequest.update({ where: { id }, data: { status, notifiedAt: status === StockRequestStatus.NOTIFIED ? new Date() : null }, include });
 };
 
-export const stockRequestsService = { create, listMine, listAdmin, updateStatus };
+export const stockRequestsService = { create, listMine, cancelMine, listAdmin, updateStatus };
