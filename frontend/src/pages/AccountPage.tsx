@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/features/auth/store";
-import { ordersApi } from "@/features/orders/api";
-import { stockRequestsApi } from "@/features/stock-requests/api";
-import { usersService } from "@/services/users.service";
-import type { Order } from "@/types/order";
-import type { StockRequest } from "@/types/stock-request";
-import type { UserAddress } from "@/types/user";
-import { orderStatusLabel, stockRequestStatusLabel } from "@/utils/order-labels";
+import { Button } from "../components/ui/button";
+import { useAuthStore } from "../features/auth/store";
+import { ordersApi } from "../features/orders/api";
+import { stockRequestsApi } from "../features/stock-requests/api";
+import { usersService } from "../services/users.service";
+import type { Order } from "../types/order";
+import type { StockRequest } from "../types/stock-request";
+import type { UserAddress } from "../types/user";
+import { orderStatusLabel, stockRequestStatusLabel } from "../utils/order-labels";
 
 export default function AccountPage() {
   const { user } = useAuthStore();

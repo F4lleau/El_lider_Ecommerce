@@ -27,10 +27,10 @@ const categories: StorefrontCategory[] = [
 const heroCategories = categories.filter((category) => category.showInHero);
 
 const trust = [
-  { icon: MapPin, title: "Retiro en sucursal", text: "Av. Manuel Belgrano, La Leonesa, Chaco." },
+  { icon: MapPin, title: "Retiro en sucursal", text: "Av. Manuel Belgrano 203, La Leonesa, Chaco." },
   { icon: Truck, title: "Envíos coordinados", text: "Preparamos pedidos para comercios y emprendedores." },
   { icon: CreditCard, title: "Compra simple", text: "Precios claros y catálogo fácil de recorrer." },
-  { icon: ShieldCheck, title: "Atención mayorista", text: "Variedad de insumos para múltiples rubros." },
+  { icon: ShieldCheck, title: "Atención personalizada", text: "Variedad de insumos para múltiples rubros." },
 ];
 
 const HomePage = () => {

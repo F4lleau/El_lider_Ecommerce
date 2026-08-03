@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { usersService } from "@/services/users.service";
-import type { User } from "@/types/user";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { usersService } from "../services/users.service";
+import type { User } from "../types/user";
 
 export default function AccountProfilePage() {
   const [user, setUser] = useState<User | null>(null);
