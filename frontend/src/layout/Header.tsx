@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
-import { BrandLogo } from "@/components/brand/BrandLogo";
-import { useAuthStore } from "@/features/auth/store";
-import { cn } from "@/lib/utils";
+import { BrandLogo } from "../components/brand/BrandLogo";
+import { useAuthStore } from "../features/auth/store";
+import { cn } from "../lib/utils";
 
 const navItems = [
   { label: "Inicio", to: "/" },
@@ -14,7 +14,10 @@ const navItems = [
 ];
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  cn("rounded-full px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground");
+  cn(
+    "rounded-full px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+  );
 
 export default function Header({ cartCount }: { cartCount: number }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,9 +25,16 @@ export default function Header({ cartCount }: { cartCount: number }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur-xl">
-      <div className="border-b border-border/60 bg-primary py-1.5 text-center text-xs font-semibold text-primary-foreground">Atención mayorista y minorista · Retiro en sucursal</div>
-      <div className="container flex h-16 items-center gap-3 lg:h-20">
-        <button className="touch-target rounded-xl border bg-card lg:hidden" onClick={() => setMobileOpen((open) => !open)} aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={mobileOpen}>
+      <div className="border-b border-primary/20 bg-primary py-1.5 text-center text-xs font-semibold text-primary-foreground">
+        Polirrubro mayorista · Todo en insumos · Retiro en sucursal
+      </div>
+      <div className="container flex h-20 items-center gap-3 lg:h-24">
+        <button
+          className="touch-target rounded-xl border bg-card lg:hidden"
+          onClick={() => setMobileOpen((open) => !open)}
+          aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={mobileOpen}
+        >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
         <BrandLogo className="mr-auto" />
@@ -32,10 +42,14 @@ export default function Header({ cartCount }: { cartCount: number }) {
           {navItems.map((item) => <NavLink key={item.to} to={item.to} className={navClass}>{item.label}</NavLink>)}
         </nav>
         <div className="ml-auto flex items-center gap-1.5">
-          <Link to="/productos" className="touch-target hidden rounded-xl border bg-card text-muted-foreground hover:text-primary sm:grid" aria-label="Buscar productos"><Search className="h-5 w-5" /></Link>
-          <Link to={user ? "/mi-cuenta" : "/login"} className="touch-target rounded-xl border bg-card text-muted-foreground hover:text-primary" aria-label={user ? "Mi cuenta" : "Iniciar sesión"}><UserRound className="h-5 w-5" /></Link>
+          <Link to="/productos" className="touch-target hidden rounded-xl border bg-card text-muted-foreground hover:text-accent sm:grid" aria-label="Buscar productos">
+            <Search className="h-5 w-5" />
+          </Link>
+          <Link to={user ? "/mi-cuenta" : "/login"} className="touch-target rounded-xl border bg-card text-muted-foreground hover:text-accent" aria-label={user ? "Mi cuenta" : "Iniciar sesión"}>
+            <UserRound className="h-5 w-5" />
+          </Link>
           {user?.role === "ADMIN" ? <Link className="hidden rounded-full bg-foreground px-3 py-2 text-xs font-bold text-background sm:block" to="/admin">Admin</Link> : null}
-          <Link to="/carrito" className="touch-target relative rounded-xl bg-primary text-primary-foreground shadow-brand" aria-label={`Carrito con ${cartCount} productos`}>
+          <Link to="/carrito" className="touch-target relative rounded-xl bg-accent text-accent-foreground shadow-brand hover:bg-accent/90" aria-label={`Carrito con ${cartCount} productos`}>
             <ShoppingBag className="h-5 w-5" />
             {cartCount > 0 ? <span className="absolute -right-2 -top-2 grid min-h-5 min-w-5 place-items-center rounded-full border-2 border-background bg-accent px-1 text-[10px] font-extrabold text-accent-foreground">{cartCount}</span> : null}
           </Link>

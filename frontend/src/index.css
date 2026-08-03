@@ -6,45 +6,45 @@
 
 @layer base {
   :root {
-    --background: 36 100% 98%;
-    --foreground: 15 29% 18%;
+    --background: 210 45% 98%;
+    --foreground: 215 45% 18%;
 
     --card: 0 0% 100%;
-    --card-foreground: 15 29% 18%;
+    --card-foreground: 215 45% 18%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 220 25% 18%;
 
-    --primary: 0 57% 49%;
+    --primary: 209 88% 34%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 33 100% 94%;
-    --secondary-foreground: 15 29% 23%;
+    --secondary: 205 74% 94%;
+    --secondary-foreground: 212 68% 24%;
 
-    --muted: 32 30% 94%;
-    --muted-foreground: 18 12% 43%;
+    --muted: 210 32% 93%;
+    --muted-foreground: 214 16% 42%;
 
-    --accent: 41 89% 61%;
-    --accent-foreground: 20 60% 20%;
+    --accent: 26 100% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 32 32% 85%;
-    --input: 32 32% 85%;
-    --ring: 0 57% 49%;
+    --border: 210 28% 86%;
+    --input: 210 28% 86%;
+    --ring: 26 100% 55%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     /* Custom tokens */
-    --mint: 160 40% 88%;
-    --mint-foreground: 160 40% 25%;
+    --mint: 172 48% 90%;
+    --mint-foreground: 179 58% 24%;
     --lilac: 270 30% 92%;
     --lilac-foreground: 270 35% 30%;
-    --sky: 200 60% 92%;
-    --sky-foreground: 200 50% 25%;
-    --peach: 20 50% 93%;
-    --peach-foreground: 20 40% 30%;
+    --sky: 202 80% 92%;
+    --sky-foreground: 207 68% 28%;
+    --peach: 29 88% 92%;
+    --peach-foreground: 28 68% 30%;
     --success: 150 50% 45%;
     --success-foreground: 0 0% 100%;
 
@@ -57,10 +57,13 @@
     --sidebar-border: 220 15% 92%;
     --sidebar-ring: 210 55% 45%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(0 57% 34% / 0.98), hsl(0 57% 49% / 0.9), hsl(25 70% 42% / 0.72));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(36 100% 98%));
-    --shadow-card: 0 8px 24px -16px hsl(15 29% 18% / 0.28);
-    --shadow-elevated: 0 22px 50px -24px hsl(15 29% 18% / 0.36);
+    --gradient-hero:
+      radial-gradient(circle at 50% 115%, hsl(26 100% 55% / 0.2), transparent 32%),
+      radial-gradient(circle at 50% 48%, hsl(205 100% 48% / 0.18), transparent 36%),
+      linear-gradient(180deg, hsl(220 24% 5%), hsl(215 34% 7%) 58%, hsl(220 24% 4%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 45% 98%));
+    --shadow-card: 0 8px 24px -16px hsl(209 88% 20% / 0.24);
+    --shadow-elevated: 0 24px 60px -30px hsl(215 80% 8% / 0.65);
 
     --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-body: 'DM Sans', system-ui, sans-serif;
@@ -109,7 +112,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.025em;
+    letter-spacing: 0;
   }
 }
 
@@ -153,7 +156,7 @@
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(0 57% 49%), hsl(41 89% 50%));
+    background-image: linear-gradient(135deg, hsl(203 100% 64%), hsl(219 92% 56%));
   }
 
   .bg-hero-gradient {
