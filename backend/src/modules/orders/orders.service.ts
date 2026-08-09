@@ -69,7 +69,8 @@ const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
   const validated = await calculate(userId, payload);
   const created = await prisma.$transaction(async (tx) => {
     const isCash = payload.paymentMethod === PaymentMethod.CASH;
-    if (isCash) await decreaseStock(tx, validated.items);
+    const stockAlreadyReserved = Boolean(userId);
+    if (isCash && !stockAlreadyReserved) await decreaseStock(tx, validated.items);
     const order = await tx.order.create({
       data: {
         orderNumber: code("ORD"),
@@ -81,7 +82,7 @@ const checkout = async (userId: number | undefined, payload: CheckoutInput) => {
         status: isCash ? OrderStatus.CONFIRMED : OrderStatus.PENDING_PAYMENT,
         paymentStatus: PaymentStatus.PENDING,
         paymentMethod: payload.paymentMethod,
-        stockProcessedAt: isCash ? new Date() : null,
+        stockProcessedAt: isCash || stockAlreadyReserved ? new Date() : null,
         deliveryMethod: payload.deliveryMethod,
         subtotal: validated.summary.subtotal.toFixed(2),
         shippingCost: validated.summary.shippingCost.toFixed(2),
@@ -172,7 +173,7 @@ const updateStatus = async (id: number, status: OrderStatus) => {
     throw new ApiError(409, `No se puede cambiar la orden de ${current.status} a ${status}`);
   }
   const updated = await prisma.$transaction(async (tx) => {
-    if (status === OrderStatus.CANCELLED && current.paymentMethod === PaymentMethod.CASH && current.stockProcessedAt && !current.stockRestoredAt) {
+    if (status === OrderStatus.CANCELLED && current.stockProcessedAt && !current.stockRestoredAt) {
       for (const item of current.items) {
         await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
       }

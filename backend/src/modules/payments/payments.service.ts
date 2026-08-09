@@ -102,7 +102,7 @@ const processVerifiedPayment = async (providerPayment: ProviderPayment) => {
     const alreadyApproved = order.paymentStatus === PaymentStatus.APPROVED || existing?.status === PaymentStatus.APPROVED;
     const shouldSendApprovedEmail = status === PaymentStatus.APPROVED && !alreadyApproved;
     let stockError: string | null = existing?.processingError ?? null;
-    let stockProcessedAt = existing?.stockProcessedAt ?? null;
+    let stockProcessedAt = existing?.stockProcessedAt ?? order.stockProcessedAt ?? null;
 
     if (status === PaymentStatus.APPROVED && !alreadyApproved && !stockProcessedAt) {
       const products = await tx.product.findMany({
@@ -153,6 +153,7 @@ const processVerifiedPayment = async (providerPayment: ProviderPayment) => {
         paymentStatus: status,
         paymentMethod: PaymentMethod.MERCADOPAGO,
         paymentReference: providerPayment.id,
+        ...(stockProcessedAt && !order.stockProcessedAt && { stockProcessedAt }),
         ...(status === PaymentStatus.APPROVED && { status: OrderStatus.PAID }),
       },
     });

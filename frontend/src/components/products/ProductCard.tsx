@@ -20,13 +20,17 @@ const money = (value: number) => value.toLocaleString("es-AR", { style: "currenc
 
 const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }: ProductCardProps) => {
   const addItem = useCartStore((state) => state.addItem);
+  const cartQuantity = useCartStore((state) => state.cart.items.find((item) => item.productId === id)?.quantity ?? 0);
   const user = useAuthStore((state) => state.user);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [reservedInView, setReservedInView] = useState(0);
   const [requestOpen, setRequestOpen] = useState(false);
   const priceValue = Number(price);
   const compareAtValue = compareAtPrice ? Number(compareAtPrice) : null;
   const hasDiscount = compareAtValue !== null && compareAtValue > priceValue;
   const discount = hasDiscount && compareAtValue ? Math.round((1 - priceValue / compareAtValue) * 100) : 0;
+  const availableStock = Math.max(0, stock - (user ? reservedInView : cartQuantity));
+  const stockLabel = availableStock === 1 ? "1 unidad disponible" : `${availableStock} unidades disponibles`;
 
   return (
     <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-elevated">
@@ -34,7 +38,7 @@ const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }
         <img src={image} alt={name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
           {hasDiscount ? <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-extrabold text-primary-foreground">-{discount}%</span> : null}
-          {stock < 1 ? <span className="rounded-full bg-foreground px-2.5 py-1 text-xs font-extrabold text-background">Sin stock</span> : null}
+          {availableStock < 1 ? <span className="rounded-full bg-foreground px-2.5 py-1 text-xs font-extrabold text-background">Sin stock</span> : null}
         </div>
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -43,12 +47,15 @@ const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }
         <div className="mt-auto">
           {hasDiscount && compareAtValue ? <p className="text-sm text-muted-foreground line-through">{money(compareAtValue)}</p> : <div className="h-5" />}
           <p className="mb-4 font-heading text-2xl font-extrabold text-foreground">{money(priceValue)}</p>
+          <p className={`mb-3 text-sm font-bold ${availableStock < 1 ? "text-destructive" : "text-muted-foreground"}`}>
+            {availableStock < 1 ? "Sin unidades disponibles" : stockLabel}
+          </p>
           <Button
             className="w-full"
-            variant={stock < 1 ? "outline" : "default"}
-            title={stock < 1 ? "Avisarme cuando haya stock" : "Agregar al carrito"}
+            variant={availableStock < 1 ? "outline" : "default"}
+            title={availableStock < 1 ? "Avisarme cuando haya stock" : "Agregar al carrito"}
             onClick={() => {
-              if (stock < 1) {
+              if (availableStock < 1) {
                 if (!user) {
                   setRequestOpen(true);
                   return;
@@ -59,13 +66,14 @@ const ProductCard = ({ id, name, price, compareAtPrice, image, category, stock }
                 return;
               }
               void addItem(id, stock).then(() => {
+                if (user) setReservedInView((value) => value + 1);
                 setFeedback("Agregado");
                 window.setTimeout(() => setFeedback(null), 1500);
               }).catch(() => setFeedback("Sin stock"));
             }}
           >
-            {stock < 1 ? <Bell className="h-4 w-4" /> : feedback === "Agregado" ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
-            {feedback ?? (stock < 1 ? "Avisarme cuando haya stock" : "Agregar")}
+            {availableStock < 1 ? <Bell className="h-4 w-4" /> : feedback === "Agregado" ? <Check className="h-4 w-4" /> : <ShoppingBag className="h-4 w-4" />}
+            {feedback ?? (availableStock < 1 ? "Avisarme cuando haya stock" : "Agregar")}
           </Button>
         </div>
       </div>
