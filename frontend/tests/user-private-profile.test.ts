@@ -31,7 +31,7 @@ describe("user private profile frontend wiring", () => {
 
     assert.match(dashboard, /Ultimos pedidos/);
     assert.match(profile, /Email/);
-    assert.match(addresses, /Direccion principal/);
+    assert.match(addresses, /Direcci[oó]n principal/);
     assert.match(orders, /Numero de seguimiento/);
     assert.match(orderDetail, /Pagar con Mercado Pago/);
     assert.match(stockRequests, /Cancelar solicitud/);
