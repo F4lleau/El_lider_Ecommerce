@@ -9,31 +9,21 @@ import { authService } from "../services/auth.service";
 
 const genericMessage = "Si el email existe, te enviaremos instrucciones para recuperar tu contraseña.";
 
-const getResetPath = (resetUrl: string) => {
-  const url = new URL(resetUrl);
-  return `${url.pathname}${url.search}`;
-};
-
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [resetUrl, setResetUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
-
-  const resetPath = resetUrl ? getResetPath(resetUrl) : null;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError("");
     setMessage("");
-    setResetUrl(null);
 
     try {
       const response = await authService.forgotPassword({ email });
       setMessage(response.message || genericMessage);
-      setResetUrl(response.resetUrl ?? null);
     } catch (caught) {
       const fallbackError = "No se pudo solicitar la recuperación";
       setError(caught instanceof Error ? caught.message : fallbackError);
@@ -63,17 +53,9 @@ export default function ForgotPasswordPage() {
         </div>
 
         {message ? (
-          <div className="rounded-xl bg-accent/10 p-3 text-sm font-semibold text-accent" role="status">
-            <p>{message}</p>
-            {resetPath ? (
-              <p className="mt-2 break-all text-xs">
-                Modo desarrollo:{" "}
-                <Link className="underline" to={resetPath}>
-                  Abrir link de reset
-                </Link>
-              </p>
-            ) : null}
-          </div>
+          <p className="rounded-xl bg-accent/10 p-3 text-sm font-semibold text-accent" role="status">
+            {message}
+          </p>
         ) : null}
 
         {error ? (
