@@ -145,8 +145,10 @@ npm install && npm run prisma:generate && npm run build && npm run prisma:deploy
 - Start command:
 
 ```bash
-npm run start
+npm run prisma:deploy && node dist/src/server.js
 ```
+
+El entrypoint real del backend es `src/server.ts`; con el `tsconfig.json` actual el build genera `dist/src/server.js`.
 
 Validaciones post deploy:
 
