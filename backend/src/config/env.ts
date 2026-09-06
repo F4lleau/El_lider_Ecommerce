@@ -3,8 +3,13 @@ import { z } from "zod";
 
 dotenv.config();
 
+const nodeEnvSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
+  z.enum(["development", "test", "production"]).default("development"),
+);
+
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: nodeEnvSchema,
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().min(1, "DATABASE_URL es requerido"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET es requerido"),
@@ -29,4 +34,14 @@ const envSchema = z.object({
   EMAIL_DEV_LOG: z.coerce.boolean().default(false),
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  const details = parsedEnv.error.issues
+    .map((issue) => `${issue.path.join(".") || "ENV"}: ${issue.message}`)
+    .join("; ");
+
+  throw new Error(`Variables de entorno invalidas: ${details}`);
+}
+
+export const env = parsedEnv.data;

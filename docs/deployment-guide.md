@@ -103,6 +103,7 @@ EMAIL_ENABLED=false
 
 Notas:
 
+- En Render, `NODE_ENV` debe quedar cargado como `production`, sin comillas y sin dejar el valor vacío.
 - `JWT_SECRET` debe ser largo, aleatorio y diferente al local.
 - `DATABASE_URL` debe apuntar a la base QA, no a producción.
 - En QA se recomiendan credenciales TEST de Mercado Pago.
