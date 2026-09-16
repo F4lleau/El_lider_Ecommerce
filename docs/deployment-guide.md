@@ -140,7 +140,7 @@ Crear un Web Service:
 - Build command:
 
 ```bash
-npm install && npm run prisma:generate && npm run build && npm run prisma:deploy
+npm install --include=dev && npm run prisma:generate && npm run build
 ```
 
 - Start command:
@@ -150,6 +150,8 @@ npm run prisma:deploy && node dist/src/server.js
 ```
 
 El entrypoint real del backend es `src/server.ts`; con el `tsconfig.json` actual el build genera `dist/src/server.js`.
+
+Render usa `NODE_ENV=production` también durante el build. Por eso el comando de build debe instalar `devDependencies`, ya que TypeScript necesita paquetes como `@types/express`, `@types/bcrypt`, `@types/jsonwebtoken`, `@types/nodemailer`, `@types/swagger-ui-express` y `@types/yamljs` para compilar.
 
 Validaciones post deploy:
 
