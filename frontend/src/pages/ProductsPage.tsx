@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { PackageSearch, Search, SlidersHorizontal } from "lucide-react";
-import ProductCard from "@/components/products/ProductCard";
-import { Input } from "@/components/ui/input";
-import { useProducts } from "@/features/products/hooks";
-import { cn } from "@/lib/utils";
+import ProductCard from "../components/products/ProductCard";
+import { Input } from "../components/ui/input";
+import { useProducts } from "../features/products/hooks";
+import { cn } from "../lib/utils";
 
 const ProductsPage = () => {
   const { data: products, isLoading, error } = useProducts();
@@ -16,8 +16,7 @@ const ProductsPage = () => {
     <div className="section-shell animate-fade-in">
       <div className="mb-8 max-w-3xl">
         <span className="eyebrow">Catálogo El Líder</span>
-        <h1 className="section-title text-3xl sm:text-4xl lg:text-5xl">Todo en insumos para tu comercio</h1>
-        <p className="mt-4 text-muted-foreground sm:text-lg">Explorá productos de este polirrubro mayorista para compras diarias, eventos y emprendimientos.</p>
+        <p className="mt-4 text-muted-foreground sm:text-lg">Explorá productos para tu día a día, eventos y emprendimientos.</p>
       </div>
       <div className="mb-8 rounded-xl border bg-card p-4 shadow-card sm:p-5">
         <div className="relative"><Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-11" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre..." aria-label="Buscar productos" /></div>
