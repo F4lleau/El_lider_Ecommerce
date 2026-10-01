@@ -1,0 +1,29 @@
+name: QA smoke test
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for platform deploys
+        run: sleep 90
+
+      - name: Check backend healthcheck
+        env:
+          KEEP_ALIVE_URL: ${{ secrets.QA_BACKEND_HEALTH_URL }}
+        run: node scripts/keep-render-awake.mjs --once
+
+      - name: Check frontend
+        env:
+          QA_FRONTEND_URL: ${{ secrets.QA_FRONTEND_URL }}
+        run: |
+          test -n "$QA_FRONTEND_URL"
+          curl --fail --silent --show-error --location "$QA_FRONTEND_URL" > /dev/null

@@ -159,6 +159,41 @@ Validaciones post deploy:
 - `https://URL_BACKEND_QA/api/docs` debe responder HTTP 200.
 - Revisar logs de Render si Prisma no conecta o si faltan variables.
 
+## Netlify frontend QA
+
+Si QA esta en Netlify, conectar el sitio al repositorio y usar la rama `develop`.
+El archivo `netlify.toml` del repo ya define:
+
+- Base directory: `frontend`
+- Build command: `npm run build`
+- Publish directory: `frontend/dist`
+- Redirect SPA: `/*` hacia `/index.html`
+
+Variables frontend QA:
+
+```env
+VITE_API_URL=https://URL_BACKEND_QA/api
+VITE_MERCADOPAGO_PUBLIC_KEY=TEST-...
+```
+
+## Deploy automatico QA
+
+Para que QA despliegue solo al mergear y pushear cambios:
+
+- Render backend QA debe estar conectado al repo, rama `develop`, con Auto-Deploy habilitado.
+- Netlify frontend QA debe estar conectado al repo, rama `develop`, con Deploys automaticos habilitados.
+- GitHub debe tener estos secrets para los workflows:
+  - `QA_BACKEND_HEALTH_URL`: `https://URL_BACKEND_QA/api/health`
+  - `QA_FRONTEND_URL`: `https://URL_FRONTEND_QA`
+
+El workflow `QA smoke test` corre en cada push a `develop`, espera unos segundos y valida backend/frontend.
+El workflow `QA keepalive` pinguea Render cada 10 minutos para reducir el apagado por inactividad del plan gratis.
+Tambien se puede ejecutar localmente:
+
+```bash
+KEEP_ALIVE_URL=https://URL_BACKEND_QA/api/health node scripts/keep-render-awake.mjs --once
+```
+
 ## Vercel frontend QA
 
 Crear proyecto:
