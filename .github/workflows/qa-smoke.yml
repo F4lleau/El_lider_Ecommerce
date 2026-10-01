@@ -3,7 +3,7 @@ name: QA smoke test
 on:
   push:
     branches:
-      - develop
+      - QA
   workflow_dispatch:
 
 jobs:
