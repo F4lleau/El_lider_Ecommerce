@@ -13,14 +13,14 @@ function SlideContent({ slide }: { slide: PromotionalSlide }) {
   const discount = normalPrice && promotionalPrice ? Math.max(0, Math.round((1 - promotionalPrice / normalPrice) * 100)) : null;
 
   return (
-    <div className="relative grid min-h-[420px] overflow-hidden rounded-2xl bg-[#f43f5e] text-white shadow-elevated lg:grid-cols-[0.9fr_1.1fr]">
+    <div className="relative grid min-h-[300px] overflow-hidden rounded-2xl bg-[#f43f5e] text-white shadow-elevated sm:min-h-[330px] lg:min-h-[340px] lg:grid-cols-[0.9fr_1.1fr]">
       <img
         src={slide.imageUrl}
         alt={slide.imageAlt}
         className="absolute inset-0 h-full w-full object-cover opacity-35 lg:static lg:order-last lg:opacity-100"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-rose-700/95 via-orange-500/78 to-yellow-300/30 lg:from-rose-700 lg:via-orange-500/95 lg:to-transparent" />
-      <div className="relative order-first flex flex-col justify-center px-5 py-10 sm:px-8 lg:order-none lg:px-10">
+      <div className="relative order-first flex flex-col justify-center px-5 py-8 sm:px-8 lg:order-none lg:px-10">
         {slide.badge ? <span className="mb-4 w-fit rounded-full bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-rose-600 shadow-sm">{slide.badge}</span> : null}
         <h1 className="max-w-2xl font-heading text-3xl font-extrabold leading-tight sm:text-5xl">{slide.title}</h1>
         {slide.subtitle ? <p className="mt-4 max-w-xl text-sm font-semibold leading-relaxed text-white/90 sm:text-base">{slide.subtitle}</p> : null}
@@ -57,7 +57,7 @@ export function PromotionalCarousel({ fallback }: { fallback: React.ReactNode })
   }, [active, slides.length]);
 
   if (!isLoading && slides.length === 0) return <>{fallback}</>;
-  if (slides.length === 0) return <div className="min-h-[420px] animate-pulse rounded-2xl bg-secondary" />;
+  if (slides.length === 0) return <div className="min-h-[300px] animate-pulse rounded-2xl bg-secondary sm:min-h-[330px] lg:min-h-[340px]" />;
 
   const current = slides[active] ?? slides[0];
   const previous = () => setActive((value) => (value - 1 + slides.length) % slides.length);
