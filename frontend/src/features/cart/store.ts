@@ -3,7 +3,8 @@ import { cartService } from "../../services/cart.service";
 import type { Cart, GuestCartItem } from "../../types/cart";
 import { addGuestItem, removeGuestItem, updateGuestItem } from "./guest-cart";
 
-const STORAGE_KEY = "guest-cart";
+const STORAGE_KEY = "el-lider:guest-cart";
+const LEGACY_STORAGE_KEY = "guest-cart";
 
 const emptyCart = (): Cart => ({
   id: 0,
@@ -18,8 +19,14 @@ const hasSession = () => Boolean(localStorage.getItem("token"));
 
 const readGuestItems = (): GuestCartItem[] => {
   try {
-    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as GuestCartItem[];
-    return Array.isArray(value) ? value : [];
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY) ?? "[]";
+    const value = JSON.parse(raw) as GuestCartItem[];
+    if (!Array.isArray(value)) return [];
+    if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(LEGACY_STORAGE_KEY)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    }
+    return value;
   } catch {
     return [];
   }
@@ -75,6 +82,7 @@ export const useCartStore = create<CartState>((set) => {
       const items = readGuestItems();
       await run(() => items.length ? cartService.sync({ items }) : cartService.getCart(), "Carrito sincronizado");
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     },
 
     addItem: async (productId, stock) => {
@@ -133,6 +141,7 @@ export const useCartStore = create<CartState>((set) => {
         return;
       }
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
       set({ cart: emptyCart(), error: null, feedback: null });
     },
 

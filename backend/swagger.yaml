@@ -755,6 +755,149 @@ paths:
         "403": { description: Rol admin requerido }
         "404": { description: Pedido no encontrado }
         "409": { description: Transición no permitida }
+  /promotional/slides:
+    get:
+      summary: Listar slides promocionales activos
+      responses:
+        "200":
+          description: Slides activos y vigentes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/PromotionalSlide" }
+  /promotional/popup:
+    get:
+      summary: Obtener popup promocional activo
+      responses:
+        "200":
+          description: Popup activo vigente o null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  data:
+                    oneOf:
+                      - { $ref: "#/components/schemas/PromotionalPopup" }
+                      - { type: "null" }
+  /admin/promotional/slides:
+    get:
+      summary: Admin lista slides promocionales
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Slides listados }
+        "403": { description: Requiere rol admin }
+    post:
+      summary: Admin crea slide promocional
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionalSlideWrite" }
+      responses:
+        "201": { description: Slide creado }
+        "400": { description: Datos invalidos }
+        "403": { description: Requiere rol admin }
+  /admin/promotional/slides/{id}:
+    get:
+      summary: Admin obtiene slide promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Slide encontrado }
+        "404": { description: Slide no encontrado }
+    patch:
+      summary: Admin actualiza slide promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionalSlideWrite" }
+      responses:
+        "200": { description: Slide actualizado }
+    delete:
+      summary: Admin desactiva slide promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Slide desactivado }
+  /admin/promotional/slides/reorder:
+    patch:
+      summary: Admin actualiza prioridad de slides
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Orden actualizado }
+  /admin/promotional/popups:
+    get:
+      summary: Admin lista popups promocionales
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Popups listados }
+    post:
+      summary: Admin crea popup promocional
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionalPopupWrite" }
+      responses:
+        "201": { description: Popup creado }
+  /admin/promotional/popups/{id}:
+    get:
+      summary: Admin obtiene popup promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Popup encontrado }
+    patch:
+      summary: Admin actualiza popup promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PromotionalPopupWrite" }
+      responses:
+        "200": { description: Popup actualizado }
+    delete:
+      summary: Admin desactiva popup promocional
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Popup desactivado }
 components:
   schemas:
     CheckoutRequest:
@@ -926,6 +1069,63 @@ components:
             properties:
               productId: { type: integer, minimum: 1 }
               quantity: { type: integer, minimum: 1, maximum: 100 }
+    PromotionalSlide:
+      allOf:
+        - $ref: "#/components/schemas/PromotionalSlideWrite"
+        - type: object
+          properties:
+            id: { type: integer }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    PromotionalSlideWrite:
+      type: object
+      required: [title, imageUrl, imageAlt, ctaLabel, linkType]
+      properties:
+        title: { type: string }
+        subtitle: { type: string, nullable: true }
+        imageUrl: { type: string, format: uri }
+        imageAlt: { type: string }
+        ctaLabel: { type: string }
+        linkType: { type: string, enum: [CATEGORY, PRODUCT, SEARCH, OFFERS, BEST_SELLERS, INTERNAL_URL] }
+        linkValue: { type: string, nullable: true }
+        badge: { type: string, nullable: true }
+        startsAt: { type: string, format: date-time, nullable: true }
+        endsAt: { type: string, format: date-time, nullable: true }
+        priority: { type: integer }
+        isFeatured: { type: boolean }
+        isActive: { type: boolean }
+    PromotionalPopup:
+      allOf:
+        - $ref: "#/components/schemas/PromotionalPopupWrite"
+        - type: object
+          properties:
+            id: { type: integer }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    PromotionalPopupWrite:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        description: { type: string, nullable: true }
+        imageUrl: { type: string, format: uri, nullable: true }
+        imageAlt: { type: string, nullable: true }
+        ctaLabel: { type: string, nullable: true }
+        linkType: { type: string, enum: [CATEGORY, PRODUCT, SEARCH, OFFERS, BEST_SELLERS, INTERNAL_URL], nullable: true }
+        linkValue: { type: string, nullable: true }
+        frequency: { type: string, enum: [ONCE, ONCE_PER_SESSION, ONCE_PER_DAY, ALWAYS] }
+        startsAt: { type: string, format: date-time, nullable: true }
+        endsAt: { type: string, format: date-time, nullable: true }
+        productIds:
+          type: array
+          items: { type: integer }
+          nullable: true
+        categoryIds:
+          type: array
+          items: { type: integer }
+          nullable: true
+        priority: { type: integer }
+        isActive: { type: boolean }
   securitySchemes:
     bearerAuth:
       type: http

@@ -36,6 +36,7 @@ import AdminCategoryFormPage from "../pages/AdminCategoryFormPage";
 import AdminOrdersPage from "../pages/AdminOrdersPage";
 import AdminOrderDetailPage from "../pages/AdminOrderDetailPage";
 import AdminStockRequestsPage from "../pages/AdminStockRequestsPage";
+import AdminPromotionsPage from "../pages/AdminPromotionsPage";
 import CheckoutPaymentPage from "../pages/CheckoutPaymentPage";
 import CheckoutPaymentResultPage from "../pages/CheckoutPaymentResultPage";
 
@@ -110,6 +111,7 @@ export const router = createBrowserRouter([
         { path: "categorias", element: <AdminCategoriesPage /> },
         { path: "categorias/nueva", element: <AdminCategoryFormPage /> },
         { path: "categorias/:id/editar", element: <AdminCategoryFormPage /> },
+        { path: "promociones", element: <AdminPromotionsPage /> },
         { path: "pedidos", element: <AdminOrdersPage /> },
         { path: "pedidos/:id", element: <AdminOrderDetailPage /> },
         { path: "solicitudes-stock", element: <AdminStockRequestsPage /> },

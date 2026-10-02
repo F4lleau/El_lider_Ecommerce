@@ -1,6 +1,7 @@
 import { apiClient } from "@/services/api-client";
 import type { AdminCategory, AdminDashboardData, AdminOrder, AdminStockRequest, CategoryWrite, OrderStatus, ProductWrite, StockRequestStatus } from "@/types/admin";
 import type { Product } from "@/types/product";
+import type { PromotionalPopup, PromotionalPopupWrite, PromotionalSlide, PromotionalSlideWrite } from "@/types/promotional-content";
 
 export const adminProductsApi = {
   list: (query?: string) => apiClient.get<Product[]>(`/admin/products${query ? `?q=${encodeURIComponent(query)}` : ""}`),
@@ -26,6 +27,17 @@ export const adminOrdersApi = {
 export const adminStockRequestsApi = {
   list: () => apiClient.get<AdminStockRequest[]>("/admin/stock-requests"),
   status: (id: number, status: StockRequestStatus) => apiClient.patch<AdminStockRequest>(`/admin/stock-requests/${id}/status`, { status }),
+};
+export const adminPromotionalApi = {
+  listSlides: () => apiClient.get<PromotionalSlide[]>("/admin/promotional/slides"),
+  createSlide: (payload: PromotionalSlideWrite) => apiClient.post<PromotionalSlide>("/admin/promotional/slides", payload),
+  updateSlide: (id: number, payload: Partial<PromotionalSlideWrite>) => apiClient.patch<PromotionalSlide>(`/admin/promotional/slides/${id}`, payload),
+  deactivateSlide: (id: number) => apiClient.delete<PromotionalSlide>(`/admin/promotional/slides/${id}`),
+  reorderSlides: (slides: Array<{ id: number; priority: number }>) => apiClient.patch<PromotionalSlide[]>("/admin/promotional/slides/reorder", { slides }),
+  listPopups: () => apiClient.get<PromotionalPopup[]>("/admin/promotional/popups"),
+  createPopup: (payload: PromotionalPopupWrite) => apiClient.post<PromotionalPopup>("/admin/promotional/popups", payload),
+  updatePopup: (id: number, payload: Partial<PromotionalPopupWrite>) => apiClient.patch<PromotionalPopup>(`/admin/promotional/popups/${id}`, payload),
+  deactivatePopup: (id: number) => apiClient.delete<PromotionalPopup>(`/admin/promotional/popups/${id}`),
 };
 export const adminDashboardApi = {
   load: async (): Promise<AdminDashboardData> => {

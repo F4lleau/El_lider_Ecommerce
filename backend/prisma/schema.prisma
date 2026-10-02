@@ -54,6 +54,22 @@ enum PaymentMethod {
   CASH
 }
 
+enum PromoLinkType {
+  CATEGORY
+  PRODUCT
+  SEARCH
+  OFFERS
+  BEST_SELLERS
+  INTERNAL_URL
+}
+
+enum PopupFrequency {
+  ONCE
+  ONCE_PER_SESSION
+  ONCE_PER_DAY
+  ALWAYS
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   firstName    String
@@ -287,4 +303,49 @@ model StockRequest {
   @@index([userId])
   @@index([email])
   @@index([status])
+}
+
+model PromotionalSlide {
+  id         Int           @id @default(autoincrement())
+  title      String
+  subtitle   String?
+  imageUrl   String
+  imageAlt   String
+  ctaLabel   String
+  linkType   PromoLinkType
+  linkValue  String?
+  badge      String?
+  startsAt   DateTime?
+  endsAt     DateTime?
+  priority   Int           @default(0)
+  isFeatured Boolean       @default(false)
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@index([isFeatured, priority])
+}
+
+model PromotionalPopup {
+  id          Int            @id @default(autoincrement())
+  title       String
+  description String?
+  imageUrl    String?
+  imageAlt    String?
+  ctaLabel    String?
+  linkType    PromoLinkType?
+  linkValue   String?
+  frequency   PopupFrequency @default(ONCE_PER_DAY)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  productIds  Json?
+  categoryIds Json?
+  priority    Int            @default(0)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@index([priority])
 }

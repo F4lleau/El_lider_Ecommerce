@@ -8,6 +8,7 @@ import { adminOrdersRouter, checkoutRouter, meOrdersRouter, ordersRouter } from 
 import { siteContentRouter } from "../modules/site-content/site-content.routes.js";
 import { stockRequestsRouter } from "../modules/stock-requests/stock-requests.routes.js";
 import { orderPaymentsRouter, paymentsRouter } from "../modules/payments/payments.routes.js";
+import { adminPromotionalContentRouter, promotionalContentRouter } from "../modules/promotional-content/promotional-content.routes.js";
 
 const apiRouter = Router();
 
@@ -26,5 +27,7 @@ apiRouter.use("/checkout", checkoutRouter);
 apiRouter.use("/me/orders", meOrdersRouter);
 apiRouter.use("/admin/orders", adminOrdersRouter);
 apiRouter.use("/site-content", siteContentRouter);
+apiRouter.use("/promotional", promotionalContentRouter);
+apiRouter.use("/admin/promotional", adminPromotionalContentRouter);
 
 export { apiRouter };
