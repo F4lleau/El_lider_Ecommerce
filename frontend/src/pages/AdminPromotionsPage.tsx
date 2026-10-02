@@ -39,6 +39,8 @@ const emptySlide: PromotionalSlideWrite = {
   linkType: "OFFERS",
   linkValue: "",
   badge: "",
+  normalPrice: null,
+  promotionalPrice: null,
   startsAt: null,
   endsAt: null,
   priority: 0,
@@ -94,6 +96,8 @@ function SlideForm({ editing, onSaved, onCancel }: { editing?: PromotionalSlide 
         <div><Label>CTA</Label><Input required value={form.ctaLabel} onChange={(e) => setForm({ ...form, ctaLabel: e.target.value })} /></div>
         <div><Label>Destino</Label><select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.linkType} onChange={(e) => setForm({ ...form, linkType: e.target.value as PromoLinkType })}>{linkOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>
         <div><Label>Valor destino</Label><Input placeholder="slug, id, busqueda o /ruta" value={form.linkValue ?? ""} onChange={(e) => setForm({ ...form, linkValue: e.target.value })} /></div>
+        <div><Label>Precio normal</Label><Input type="number" value={form.normalPrice ?? ""} onChange={(e) => setForm({ ...form, normalPrice: e.target.value ? Number(e.target.value) : null })} /></div>
+        <div><Label>Precio promocional</Label><Input type="number" value={form.promotionalPrice ?? ""} onChange={(e) => setForm({ ...form, promotionalPrice: e.target.value ? Number(e.target.value) : null })} /></div>
         <div><Label>Prioridad</Label><Input type="number" value={form.priority} onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })} /></div>
         <div><Label>Inicio</Label><Input type="datetime-local" value={toDateInput(String(form.startsAt ?? ""))} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></div>
         <div><Label>Fin</Label><Input type="datetime-local" value={toDateInput(String(form.endsAt ?? ""))} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} /></div>

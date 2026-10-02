@@ -315,6 +315,8 @@ model PromotionalSlide {
   linkType   PromoLinkType
   linkValue  String?
   badge      String?
+  normalPrice Decimal?      @db.Decimal(10, 2)
+  promotionalPrice Decimal? @db.Decimal(10, 2)
   startsAt   DateTime?
   endsAt     DateTime?
   priority   Int           @default(0)

@@ -7,18 +7,30 @@ import { usePromotionalSlides } from "@/features/promotional-content/hooks";
 import type { PromotionalSlide } from "@/types/promotional-content";
 
 function SlideContent({ slide }: { slide: PromotionalSlide }) {
+  const normalPrice = slide.normalPrice ? Number(slide.normalPrice) : null;
+  const promotionalPrice = slide.promotionalPrice ? Number(slide.promotionalPrice) : null;
+  const hasPrice = normalPrice !== null || promotionalPrice !== null;
+  const discount = normalPrice && promotionalPrice ? Math.max(0, Math.round((1 - promotionalPrice / normalPrice) * 100)) : null;
+
   return (
-    <div className="relative grid min-h-[420px] overflow-hidden rounded-2xl bg-foreground text-white shadow-elevated lg:grid-cols-[1.05fr_0.95fr]">
+    <div className="relative grid min-h-[420px] overflow-hidden rounded-2xl bg-[#f43f5e] text-white shadow-elevated lg:grid-cols-[0.9fr_1.1fr]">
       <img
         src={slide.imageUrl}
         alt={slide.imageAlt}
-        className="absolute inset-0 h-full w-full object-cover opacity-45 lg:static lg:opacity-100"
+        className="absolute inset-0 h-full w-full object-cover opacity-35 lg:static lg:order-last lg:opacity-100"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/20 lg:hidden" />
-      <div className="relative order-first flex flex-col justify-center px-5 py-10 sm:px-8 lg:order-none lg:bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.35),transparent_34%),linear-gradient(135deg,#16110f,#362019_58%,#5c2d18)] lg:px-10">
-        {slide.badge ? <span className="mb-4 w-fit rounded-full bg-accent px-3 py-1 text-xs font-extrabold text-accent-foreground">{slide.badge}</span> : null}
+      <div className="absolute inset-0 bg-gradient-to-r from-rose-700/95 via-orange-500/78 to-yellow-300/30 lg:from-rose-700 lg:via-orange-500/95 lg:to-transparent" />
+      <div className="relative order-first flex flex-col justify-center px-5 py-10 sm:px-8 lg:order-none lg:px-10">
+        {slide.badge ? <span className="mb-4 w-fit rounded-full bg-white px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-rose-600 shadow-sm">{slide.badge}</span> : null}
         <h1 className="max-w-2xl font-heading text-3xl font-extrabold leading-tight sm:text-5xl">{slide.title}</h1>
-        {slide.subtitle ? <p className="mt-4 max-w-xl text-sm font-semibold leading-relaxed text-white/85 sm:text-base">{slide.subtitle}</p> : null}
+        {slide.subtitle ? <p className="mt-4 max-w-xl text-sm font-semibold leading-relaxed text-white/90 sm:text-base">{slide.subtitle}</p> : null}
+        {hasPrice ? (
+          <div className="mt-6 flex flex-wrap items-end gap-3">
+            {promotionalPrice ? <span className="font-heading text-4xl font-extrabold leading-none sm:text-5xl">${promotionalPrice.toLocaleString("es-AR")}</span> : null}
+            {normalPrice ? <span className="pb-1 text-base font-bold text-white/75 line-through">${normalPrice.toLocaleString("es-AR")}</span> : null}
+            {discount ? <span className="mb-1 rounded-full bg-yellow-300 px-3 py-1 text-sm font-extrabold text-rose-700">{discount}% OFF</span> : null}
+          </div>
+        ) : null}
         <div className="mt-7">
           <Button size="lg" asChild>
             <Link to={promoDestinationTo(slide)}>{slide.ctaLabel}<ArrowRight className="h-4 w-4" /></Link>

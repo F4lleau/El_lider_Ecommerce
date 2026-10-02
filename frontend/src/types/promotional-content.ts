@@ -11,6 +11,8 @@ export type PromotionalSlide = {
   linkType: PromoLinkType;
   linkValue?: string | null;
   badge?: string | null;
+  normalPrice?: number | string | null;
+  promotionalPrice?: number | string | null;
   startsAt?: string | null;
   endsAt?: string | null;
   priority: number;
